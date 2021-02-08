@@ -169,7 +169,6 @@ export default function Dashboard() {
     fixedHeight: {
       height: 240,
     },
-    datagrid: {},
     dflex: {
       display: "flex",
       flexDirection: "row",
@@ -599,8 +598,7 @@ export default function Dashboard() {
                 columns={columns}
                 pageSize={5}
                 checkboxSelection
-                className={classes.datagrid}
-                showToolbar
+                showToolbar={true}
                 filterModel={filterModel}
               />
             </Paper>
