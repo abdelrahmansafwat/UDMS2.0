@@ -1,16 +1,28 @@
 const express = require("express");
 const router = express.Router();
+const aws = require("aws-sdk");
 const multer = require("multer");
+const multerS3 = require("multer-s3");
 const fs = require("fs");
 const decisionModel = require("../models/decision");
 const path = require("path");
 
-var storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "..", "files"));
+aws.config.update({
+  secretAccessKey: process.env.S3_ACCESS_SECRET,
+  accessKeyId: process.env.S3_ACCESS_KEY,
+  region: "eu-central-1",
+});
+
+const s3 = new aws.S3();
+
+var storage = multerS3({
+  acl: "public-read",
+  s3,
+  bucket: "govdas",
+  metadata: function (req, file, cb) {
+    cb(null, { fieldName: "TESTING_METADATA" });
   },
-  filename: function (req, file, cb) {
-    console.log(file);
+  key: function (req, file, cb) {
     cb(null, file.originalname);
   },
 });
@@ -20,7 +32,7 @@ var uploadDisk = multer({ storage: storage });
 //New decision route
 router.post("/new", uploadDisk.single("file"), async (req, res) => {
   console.log("file uploaded");
-  console.log(req.file);
+  console.log(req.body);
 
   //console.log(req);
 
@@ -47,7 +59,7 @@ router.post("/new", uploadDisk.single("file"), async (req, res) => {
 
 //Update decision route
 router.post("/update", uploadDisk.single("file"), async (req, res) => {
-  console.log("file uploaded");
+  console.log(req);
   fs.unlink(path.join(__dirname, "files", req.body.oldimage), (err) => {
     res.status(500).json({
       message: err.message,

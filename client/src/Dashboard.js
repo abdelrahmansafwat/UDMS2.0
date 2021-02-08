@@ -264,6 +264,7 @@ export default function Dashboard() {
         const onClick = async () => {
           console.log("Viewing decision #" + index);
           var decision = decisions[index - 1];
+          /*
           await axios
             .get("/api/retrieve_decisions/image/" + decision.image, {
               responseType: "arraybuffer",
@@ -274,12 +275,18 @@ export default function Dashboard() {
                   "data:;base64," +
                   Buffer.from(response.data, "binary").toString("base64"))
             );
+          */
+          decision.imageBase64 = "https://govdas.s3.eu-central-1.amazonaws.com/" + decision.image;
           setCurrentDecision(decision);
           setViewDialog(true);
         };
 
         return (
-          <Button variant="contained" onClick={() => onClick()} disabled={ privilege < 2 }>
+          <Button
+            variant="contained"
+            onClick={() => onClick()}
+            disabled={privilege < 2}
+          >
             View
           </Button>
         );
@@ -310,7 +317,12 @@ export default function Dashboard() {
         };
 
         return (
-          <Button variant="contained" color="primary" onClick={() => onClick()} disabled={ privilege < 2 }>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => onClick()}
+            disabled={privilege < 2}
+          >
             Update
           </Button>
         );
@@ -358,7 +370,7 @@ export default function Dashboard() {
             variant="contained"
             color="secondary"
             onClick={() => onClick()}
-            disabled={ privilege < 2 }
+            disabled={privilege < 2}
           >
             Delete
           </Button>
@@ -369,7 +381,7 @@ export default function Dashboard() {
 
   const getAllDecisions = async () => {
     //console.log(history.location.state.privilege);
-    
+
     if (privilege > 0) {
       axios.create({ baseURL: window.location.origin });
       await axios
@@ -812,14 +824,12 @@ export default function Dashboard() {
 
               <FormControl variant="outlined" fullWidth>
                 <InputLabel id="demo-simple-select-outlined-label">
-                  Issuers
+                  Issuer
                 </InputLabel>
                 <Select
                   labelId="demo-mutiple-chip-label"
                   id="demo-mutiple-chip"
-                  multiple
                   value={selectedIssuers}
-                  renderValue={(selected) => selected.join(", ")}
                   onChange={(selected) => {
                     //var newSelectedTags = tags;
                     //newSelectedTags.push(selected.target.value);
@@ -831,28 +841,12 @@ export default function Dashboard() {
                   {issuers.map(function (issuer) {
                     return (
                       <MenuItem key={issuer} value={issuer}>
-                        <Checkbox
-                          checked={selectedIssuers.indexOf(issuer) > -1}
-                        />
                         <ListItemText primary={issuer} />
                       </MenuItem>
                     );
                   })}
                 </Select>
               </FormControl>
-              <Paper component="ul" className={classes.paperChips}>
-                {selectedIssuers.map((data) => {
-                  return (
-                    <li key={data}>
-                      <Chip
-                        label={data}
-                        className={classes.chip}
-                        onDelete={handleIssuersDelete(data)}
-                      />
-                    </li>
-                  );
-                })}
-              </Paper>
 
               <TextField
                 error={summaryError}
@@ -1008,7 +1002,7 @@ export default function Dashboard() {
                   formData.append("title", title);
                   formData.append("summary", summary);
                   formData.append("tags", tags);
-                  formData.append("issuedby", issuedBy);
+                  formData.append("issuedby", selectedIssuers);
                   formData.append("date", date);
                   axios.create({ baseURL: window.location.origin });
                   axios
