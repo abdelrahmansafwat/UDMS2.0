@@ -41,7 +41,7 @@ router.post("/new", uploadDisk.single("file"), async (req, res) => {
     issuedby: req.body.issuedby,
     summary: req.body.summary,
     image: req.file.originalname,
-    tags: req.body.tags,
+    tags: req.body.tags.split(","),
   });
 
   newDecision.save((err, data) => {
@@ -73,7 +73,7 @@ router.post("/update", uploadDisk.single("file"), async (req, res) => {
       issuedby: req.body.issuedby,
       summary: req.body.summary,
       image: req.body.image,
-      tags: req.body.tags,
+      tags: req.body.tags.split(","),
     },
     { new: true },
     (err, data) => {

@@ -249,6 +249,7 @@ export default function Dashboard() {
     { field: "issuedby", headerName: "Issued By", width: 130 },
     { field: "summary", headerName: "Summary", width: 130 },
     { field: "date", headerName: "Date", type: "date", width: 130 },
+    { field: "tags", headerName: "Tags", width: 130 },
     {
       field: "viewButton",
       headerName: "View",
@@ -529,7 +530,7 @@ export default function Dashboard() {
                     event.stopPropagation();
                     setTitle("");
                     setSummary("");
-                    //setTags([]);
+                    setSelectedTags([]);
                     setIssuedBy("");
                     setDate(new Date());
                     setAddOrUpdate("Add");
@@ -698,9 +699,9 @@ export default function Dashboard() {
                           var: newTagOrIssuer,
                         })
                         .then(function (response) {
-                          console.log(response);
+                          //console.log(newTagOrIssuer);
                           setVarsDialog(false);
-                          if (newTagOrIssuer === "Tag") {
+                          if (selectedNewTagOrIssuer === "Tag") {
                             var oldTags = tags;
                             oldTags.push(newTagOrIssuer);
                             setTags(oldTags);
@@ -779,6 +780,20 @@ export default function Dashboard() {
               <Divider />
               <ListItem button>
                 <ListItemText primary="Date" secondary={currentDecision.date} />
+              </ListItem>
+              <Divider />
+              <ListItem button>
+              <ListItemText primary="Tags" secondary={currentDecision.tags && currentDecision.tags.map((data) => {
+                  return (
+                    <li key={data}>
+                      <Chip
+                        label={data}
+                        className={classes.chip}
+                      />
+                    </li>
+                  );
+                })} />
+              
               </ListItem>
               <Divider />
             </List>
@@ -995,11 +1010,12 @@ export default function Dashboard() {
               </Button>
               <Button
                 onClick={() => {
+                  //console.log(selectedTags);
                   var formData = new FormData();
                   formData.append("file", image);
                   formData.append("title", title);
                   formData.append("summary", summary);
-                  formData.append("tags", tags);
+                  formData.append("tags", selectedTags);
                   formData.append("issuedby", selectedIssuers);
                   formData.append("date", date);
                   axios.create({ baseURL: window.location.origin });
