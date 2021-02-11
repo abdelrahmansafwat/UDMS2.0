@@ -50,6 +50,7 @@ import {
 } from "@material-ui/pickers";
 import { ThemeProvider } from "@material-ui/core";
 import { createMuiTheme } from "@material-ui/core/styles";
+import { useForm, Controller } from "react-hook-form";
 const axios = require("axios");
 
 const light = {
@@ -82,13 +83,6 @@ function Copyright() {
 }
 
 const drawerWidth = 240;
-
-const useConstructor = (callBack = () => {}) => {
-  const [hasBeenCalled, setHasBeenCalled] = useState(false);
-  if (hasBeenCalled) return;
-  callBack();
-  setHasBeenCalled(true);
-};
 
 export default function Dashboard() {
   const useStyles = makeStyles((theme) => ({
@@ -225,6 +219,7 @@ export default function Dashboard() {
   const [lightTheme, setLightTheme] = useState(true);
   const [newTagOrIssuer, setNewTagOrIssuer] = useState("");
   const [selectedNewTagOrIssuer, setSelectedNewTagOrIssuer] = useState("");
+  const { control } = useForm();
 
   const ITEM_HEIGHT = 48;
   const ITEM_PADDING_TOP = 8;
@@ -276,7 +271,8 @@ export default function Dashboard() {
                   Buffer.from(response.data, "binary").toString("base64"))
             );
           */
-          decision.imageBase64 = "https://govdas.s3.eu-central-1.amazonaws.com/" + decision.image;
+          decision.imageBase64 =
+            "https://govdas.s3.eu-central-1.amazonaws.com/" + decision.image;
           setCurrentDecision(decision);
           setViewDialog(true);
         };
@@ -647,17 +643,23 @@ export default function Dashboard() {
                 className={classes.dflex}
               >
                 <Grid item xs={6}>
-                  <TextField
-                    value={newTagOrIssuer}
-                    variant="outlined"
-                    margin="normal"
-                    fullWidth
-                    id="addTagIssuer"
-                    label="Tag or Issuer"
-                    name="addTagIssuer"
-                    onChange={(e) => {
-                      setNewTagOrIssuer(e.target.value);
-                    }}
+                  <Controller
+                  name="tagissuer"
+                    as={
+                      <TextField
+                        value={newTagOrIssuer}
+                        variant="outlined"
+                        margin="normal"
+                        fullWidth
+                        id="addTagIssuer"
+                        label="Tag or Issuer"
+                        name="addTagIssuer"
+                        onChange={(e) => {
+                          setNewTagOrIssuer(e.target.value);
+                        }}
+                      />
+                    }
+                    control={control}
                   />
                 </Grid>
                 <Grid item xs={3}>
@@ -783,17 +785,19 @@ export default function Dashboard() {
               </ListItem>
               <Divider />
               <ListItem button>
-              <ListItemText primary="Tags" secondary={currentDecision.tags && currentDecision.tags.map((data) => {
-                  return (
-                    <li key={data}>
-                      <Chip
-                        label={data}
-                        className={classes.chip}
-                      />
-                    </li>
-                  );
-                })} />
-              
+                <ListItemText
+                  primary="Tags"
+                  secondary={
+                    currentDecision.tags &&
+                    currentDecision.tags.map((data) => {
+                      return (
+                        <li key={data}>
+                          <Chip label={data} className={classes.chip} />
+                        </li>
+                      );
+                    })
+                  }
+                />
               </ListItem>
               <Divider />
             </List>
@@ -806,33 +810,39 @@ export default function Dashboard() {
           >
             <DialogTitle id="form-dialog-title">{addOrUpdate}</DialogTitle>
             <DialogContent>
-              <TextField
-                error={titleError}
-                value={title}
-                variant="outlined"
-                margin="normal"
-                required
-                fullWidth
-                id="title"
-                label="Title"
-                name="title"
-                autoComplete="title"
-                helperText={titleError ? "Required" : ""}
-                onChange={(e) => {
-                  if (e.target.value === "") {
-                    setTitleError(true);
-                    setTitle(e.target.value);
-                  } else {
-                    setTitleError(false);
-                    setTitle(e.target.value);
-                  }
-                }}
-                onBlur={() => {
-                  if (title === "") {
-                    setTitleError(true);
-                  }
-                }}
-                autoFocus
+              <Controller
+              name="title"
+                as={
+                  <TextField
+                    error={titleError}
+                    value={title}
+                    variant="outlined"
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="title"
+                    label="Title"
+                    name="title"
+                    autoComplete="title"
+                    helperText={titleError ? "Required" : ""}
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        setTitleError(true);
+                        setTitle(e.target.value);
+                      } else {
+                        setTitleError(false);
+                        setTitle(e.target.value);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (title === "") {
+                        setTitleError(true);
+                      }
+                    }}
+                    autoFocus
+                  />
+                }
+                control={control}
               />
 
               <FormControl variant="outlined" fullWidth>
@@ -860,34 +870,39 @@ export default function Dashboard() {
                   })}
                 </Select>
               </FormControl>
-
-              <TextField
-                error={summaryError}
-                value={summary}
-                variant="outlined"
-                margin="normal"
-                required
-                fullWidth
-                multiline
-                id="summary"
-                label="Summary"
-                name="summary"
-                autoComplete="summary"
-                helperText={summaryError ? "Required" : ""}
-                onChange={(e) => {
-                  if (e.target.value === "") {
-                    setSummaryError(true);
-                    setSummary(e.target.value);
-                  } else {
-                    setSummaryError(false);
-                    setSummary(e.target.value);
-                  }
-                }}
-                onBlur={() => {
-                  if (summary === "") {
-                    setSummaryError(true);
-                  }
-                }}
+              <Controller
+              name="summary"
+                as={
+                  <TextField
+                    error={summaryError}
+                    value={summary}
+                    variant="outlined"
+                    margin="normal"
+                    required
+                    fullWidth
+                    multiline
+                    id="summary"
+                    label="Summary"
+                    name="summary"
+                    autoComplete="summary"
+                    helperText={summaryError ? "Required" : ""}
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        setSummaryError(true);
+                        setSummary(e.target.value);
+                      } else {
+                        setSummaryError(false);
+                        setSummary(e.target.value);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (summary === "") {
+                        setSummaryError(true);
+                      }
+                    }}
+                  />
+                }
+                control={control}
               />
 
               <FormControl variant="outlined" fullWidth>
@@ -955,25 +970,31 @@ export default function Dashboard() {
                 className={classes.dflex}
               >
                 <Grid item xs={9}>
-                  <TextField
-                    error={imageError}
-                    value={imageName}
-                    variant="outlined"
-                    margin="normal"
-                    required
-                    fullWidth
-                    disabled
-                    id="image"
-                    label="Image"
-                    name="image"
-                    helperText={imageError ? "Required" : ""}
-                    onChange={(e) => {
-                      if (e.target.value === "") {
-                        setImageError(true);
-                      } else {
-                        setImageError(false);
-                      }
-                    }}
+                  <Controller
+                  name="imagename"
+                    as={
+                      <TextField
+                        error={imageError}
+                        value={imageName}
+                        variant="outlined"
+                        margin="normal"
+                        required
+                        fullWidth
+                        disabled
+                        id="image"
+                        label="Image"
+                        name="image"
+                        helperText={imageError ? "Required" : ""}
+                        onChange={(e) => {
+                          if (e.target.value === "") {
+                            setImageError(true);
+                          } else {
+                            setImageError(false);
+                          }
+                        }}
+                      />
+                    }
+                    control={control}
                   />
                 </Grid>
                 <Grid item xs={3}>
