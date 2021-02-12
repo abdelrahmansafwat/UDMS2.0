@@ -642,10 +642,9 @@ export default function Dashboard() {
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  if(administration){
+                  if (administration) {
                     getAllUsers();
-                  }
-                  else {
+                  } else {
                     getAllDecisions();
                   }
                 }}
@@ -1418,15 +1417,15 @@ export default function Dashboard() {
                     } else if (userPrivilege === "Admin") {
                       privilegeLevel = 3;
                     }
-                    var formData = new FormData();
-                    formData.append("firstName", control.getValues().firstName);
-                    formData.append("lastName", control.getValues().lastName);
-                    formData.append("email", control.getValues().email);
-                    formData.append("privilege", privilegeLevel);
-                    formData.append("_id", userId);
                     axios.create({ baseURL: window.location.origin });
                     axios
-                      .post("/api/user/update", formData)
+                      .post("/api/user/update", {
+                        firstName: control.getValues().firstName,
+                        lastName: control.getValues().lastName,
+                        email: control.getValues().email,
+                        privilege: privilegeLevel,
+                        _id: userId
+                      })
                       .then(function (response) {
                         console.log(response);
                         setUpdateProgress(false);
