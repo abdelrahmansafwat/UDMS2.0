@@ -9,6 +9,7 @@
     "server": "node app.js",
     "dev": "concurrently --kill-others-on-fail \"npm run server\" \"npm run client\"",
     "build-start": "(cd client && yarn build) && (cd .. && yarn start)",
+    "build-profile-start": "(cd client && yarn build-profile) && (cd .. && yarn start)",
     "start": "node app.js",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix client && npm run build --prefix client"
   },
@@ -23,6 +24,7 @@
     "mongoose": "^5.11.13",
     "multer": "^1.4.2",
     "multer-s3": "^2.9.0",
-    "react-hook-form": "^6.15.1"
+    "react-hook-form": "^6.15.1",
+    "underscore": "^1.12.0"
   }
 }

@@ -43,6 +43,8 @@ import Chip from "@material-ui/core/Chip";
 import Checkbox from "@material-ui/core/Checkbox";
 import history from "./history";
 import CloseIcon from "@material-ui/icons/Close";
+import GavelIcon from "@material-ui/icons/Gavel";
+import SupervisorAccountIcon from "@material-ui/icons/SupervisorAccount";
 import DateFnsUtils from "@date-io/date-fns";
 import {
   MuiPickersUtilsProvider,
@@ -50,6 +52,7 @@ import {
 } from "@material-ui/pickers";
 import { ThemeProvider } from "@material-ui/core";
 import { createMuiTheme } from "@material-ui/core/styles";
+import CircularProgress from "@material-ui/core/CircularProgress";
 import { useForm, Controller } from "react-hook-form";
 const axios = require("axios");
 
@@ -219,6 +222,17 @@ export default function Dashboard() {
   const [lightTheme, setLightTheme] = useState(true);
   const [newTagOrIssuer, setNewTagOrIssuer] = useState("");
   const [selectedNewTagOrIssuer, setSelectedNewTagOrIssuer] = useState("");
+  const [ready, setReady] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState(false);
+  const [administration, setAdministration] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [firstName, setFirstName] = useState(history.location.state.firstName);
+  const [lastName, setLastName] = useState(history.location.state.lastName);
+  const [email, setEmail] = useState(history.location.state.email);
+  const [userPrivilege, setUserPrivilege] = useState("");
+  const [userDialog, setUserDialog] = useState(false);
+  const [userId, setUserId] = useState("");
+  const [decisionId, setDecisionId] = useState("");
   const { control } = useForm();
 
   const ITEM_HEIGHT = 48;
@@ -238,7 +252,7 @@ export default function Dashboard() {
     items: [{ columnField: "title", operatorValue: "contains", value: "" }],
   };
 
-  const columns = [
+  const decisionsColumns = [
     { field: "id", headerName: "ID", width: 70, filterable: false },
     { field: "title", headerName: "Title", width: 130 },
     { field: "issuedby", headerName: "Issued By", width: 130 },
@@ -304,6 +318,7 @@ export default function Dashboard() {
           setSelectedTags(params.row.tags);
           setIssuedBy(params.row.issuedby);
           setDate(params.row.date);
+          setDecisionId(params.row._id);
           setAddOrUpdate("Update");
           setTitleError(false);
           setSummaryError(false);
@@ -375,9 +390,96 @@ export default function Dashboard() {
     },
   ];
 
+  const usersColumns = [
+    { field: "id", headerName: "ID", width: 70, filterable: false },
+    { field: "firstName", headerName: "First Name", width: 130 },
+    { field: "lastName", headerName: "Last Name", width: 130 },
+    { field: "privilege", headerName: "Privilege", width: 130 },
+    {
+      field: "updateButton",
+      headerName: "Update",
+      width: 130,
+      disableClickEventBubbling: true,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        //console.log(params.row.viewButton);
+
+        const onClick = async () => {
+          setUserId(params.row._id);
+          setFirstName(params.row.firstName);
+          setLastName(params.row.lastName);
+          setEmail(params.row.email);
+          setUserPrivilege(params.row.privilege);
+          console.log(params.row._id);
+          setUserDialog(true);
+        };
+
+        return (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => onClick()}
+            disabled={privilege < 2}
+          >
+            Update
+          </Button>
+        );
+      },
+    },
+    {
+      field: "deleteButton",
+      headerName: "Delete",
+      width: 130,
+      disableClickEventBubbling: true,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        //console.log(params.row.viewButton);
+        var index = params.row.id;
+
+        const onClick = async () => {
+          console.log("Viewing decision #" + index);
+          var user = users[index - 1];
+          var allusers = users;
+          axios
+            .post("/api/user/delete", {
+              _id: user._id,
+            })
+            .then(function (response) {
+              console.log(response);
+              console.log(allusers.length);
+              allusers.splice(index - 1, 1);
+              console.log(allusers.length);
+              setUsers(allusers);
+              //history.push("/dashboard");
+            })
+            .catch(function (error) {
+              console.log(error);
+              if (error) {
+                setErrorMessage("An error occured. Please try again.");
+                setAuthError(true);
+              }
+            });
+        };
+
+        return (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => onClick()}
+            disabled={privilege < 2}
+          >
+            Delete
+          </Button>
+        );
+      },
+    },
+  ];
+
   const getAllDecisions = async () => {
     //console.log(history.location.state.privilege);
-
+    setReady(false);
     if (privilege > 0) {
       axios.create({ baseURL: window.location.origin });
       await axios
@@ -431,12 +533,43 @@ export default function Dashboard() {
           setErrorMessage("An error occured. Please try again.");
         });
     }
+    setReady(true);
+  };
+
+  const getAllUsers = async () => {
+    //console.log(history.location.state.privilege);
+    setReady(false);
+    await axios
+      .get("/api/user/all")
+      .then(function (response) {
+        var users = response.data.users;
+        users.forEach((value, index) => {
+          users[index].id = index + 1;
+          if (users[index].privilege === 0) {
+            users[index].privilege = "None";
+          } else if (users[index].privilege === 1) {
+            users[index].privilege = "View";
+          } else if (users[index].privilege === 2) {
+            users[index].privilege = "View/Update";
+          } else if (users[index].privilege === 3) {
+            users[index].privilege = "Admin";
+          }
+        });
+        console.log(users);
+        setUsers(users);
+      })
+      .catch(function (error) {
+        console.log(error);
+        setAuthError(true);
+        setErrorMessage("An error occured. Please try again.");
+      });
+    setReady(true);
   };
 
   const constructor = async () => {
     if (constructorHasRun) return;
-    await getAllDecisions();
     setConstructorHasRun(true);
+    await getAllDecisions();
   };
 
   constructor();
@@ -509,7 +642,12 @@ export default function Dashboard() {
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  getAllDecisions();
+                  if(administration){
+                    getAllUsers();
+                  }
+                  else {
+                    getAllDecisions();
+                  }
                 }}
               >
                 <ListItemIcon>
@@ -564,11 +702,58 @@ export default function Dashboard() {
           <Divider />
           <List>
             <div>
-              <ListItem button>
+              <ListItem
+                button
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  var privilegeLevel = "";
+                  if (history.location.state.privilege === 0) {
+                    privilegeLevel = "None";
+                  } else if (history.location.state.privilege === 1) {
+                    privilegeLevel = "View";
+                  } else if (history.location.state.privilege === 2) {
+                    privilegeLevel = "View/Update";
+                  } else if (history.location.state.privilege === 3) {
+                    privilegeLevel = "Admin";
+                  }
+                  setFirstName(history.location.state.firstName);
+                  setLastName(history.location.state.lastName);
+                  setEmail(history.location.state.email);
+                  setUserPrivilege(privilegeLevel);
+                  setUserDialog(true);
+                }}
+              >
                 <ListItemIcon>
                   <AccountCircleIcon />
                 </ListItemIcon>
                 <ListItemText primary="User" />
+              </ListItem>
+              {privilege > 1 && (
+                <ListItem
+                  button
+                  onClick={(event) => {
+                    getAllUsers();
+                    setAdministration(true);
+                  }}
+                >
+                  <ListItemIcon>
+                    <SupervisorAccountIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Admin" />
+                </ListItem>
+              )}
+              <ListItem
+                button
+                onClick={(event) => {
+                  getAllDecisions();
+                  setAdministration(false);
+                }}
+              >
+                <ListItemIcon>
+                  <GavelIcon />
+                </ListItemIcon>
+                <ListItemText primary="Decisions" />
               </ListItem>
               <ListItem
                 button
@@ -590,39 +775,41 @@ export default function Dashboard() {
           <div className={classes.appBarSpacer} />
           <Container maxWidth="lg" className={classes.container}>
             <Paper className={classes.paper}>
-              <DataGrid
-                rows={decisions}
-                columns={columns}
-                pageSize={5}
-                checkboxSelection
-                showToolbar={true}
-                filterModel={filterModel}
-              />
+              {!ready && (
+                <CircularProgress
+                  style={{
+                    position: "absolute",
+                    left: "50%",
+                    top: "50%",
+                  }}
+                />
+              )}
+              {ready && !administration && (
+                <DataGrid
+                  rows={decisions}
+                  columns={decisionsColumns}
+                  pageSize={5}
+                  checkboxSelection
+                  showToolbar={true}
+                  filterModel={filterModel}
+                />
+              )}
+
+              {ready && administration && (
+                <DataGrid
+                  rows={users}
+                  columns={usersColumns}
+                  pageSize={5}
+                  checkboxSelection
+                  showToolbar={true}
+                  filterModel={filterModel}
+                />
+              )}
             </Paper>
             <Box pt={4}>
               <Copyright />
             </Box>
           </Container>
-          <Dialog
-            open={authError}
-            TransitionComponent={Transition}
-            keepMounted
-            onClose={() => setAuthError(false)}
-            aria-labelledby="alert-dialog-slide-title"
-            aria-describedby="alert-dialog-slide-description"
-          >
-            <DialogTitle id="alert-dialog-slide-title">{"Error"}</DialogTitle>
-            <DialogContent>
-              <DialogContentText id="alert-dialog-slide-description">
-                {errorMessage}
-              </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setAuthError(false)} color="primary">
-                Close
-              </Button>
-            </DialogActions>
-          </Dialog>
 
           <Dialog
             open={varsDialog}
@@ -644,7 +831,7 @@ export default function Dashboard() {
               >
                 <Grid item xs={6}>
                   <Controller
-                  name="tagissuer"
+                    name="newTagOrIssuer"
                     as={
                       <TextField
                         value={newTagOrIssuer}
@@ -698,7 +885,7 @@ export default function Dashboard() {
                       axios
                         .post("/api/var/update", {
                           name: selectedNewTagOrIssuer.toLowerCase() + "s",
-                          var: newTagOrIssuer,
+                          var: control.getValues().newTagOrIssuer,
                         })
                         .then(function (response) {
                           //console.log(newTagOrIssuer);
@@ -811,7 +998,7 @@ export default function Dashboard() {
             <DialogTitle id="form-dialog-title">{addOrUpdate}</DialogTitle>
             <DialogContent>
               <Controller
-              name="title"
+                name="title"
                 as={
                   <TextField
                     error={titleError}
@@ -871,7 +1058,7 @@ export default function Dashboard() {
                 </Select>
               </FormControl>
               <Controller
-              name="summary"
+                name="summary"
                 as={
                   <TextField
                     error={summaryError}
@@ -970,31 +1157,25 @@ export default function Dashboard() {
                 className={classes.dflex}
               >
                 <Grid item xs={9}>
-                  <Controller
-                  name="imagename"
-                    as={
-                      <TextField
-                        error={imageError}
-                        value={imageName}
-                        variant="outlined"
-                        margin="normal"
-                        required
-                        fullWidth
-                        disabled
-                        id="image"
-                        label="Image"
-                        name="image"
-                        helperText={imageError ? "Required" : ""}
-                        onChange={(e) => {
-                          if (e.target.value === "") {
-                            setImageError(true);
-                          } else {
-                            setImageError(false);
-                          }
-                        }}
-                      />
-                    }
-                    control={control}
+                  <TextField
+                    error={imageError}
+                    value={imageName}
+                    variant="outlined"
+                    margin="normal"
+                    required
+                    fullWidth
+                    disabled
+                    id="image"
+                    label="Image"
+                    name="image"
+                    helperText={imageError ? "Required" : ""}
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        setImageError(true);
+                      } else {
+                        setImageError(false);
+                      }
+                    }}
                   />
                 </Grid>
                 <Grid item xs={3}>
@@ -1032,23 +1213,33 @@ export default function Dashboard() {
               <Button
                 onClick={() => {
                   //console.log(selectedTags);
+                  console.log(control.getValues());
+                  setUpdateProgress(true);
+                  var choice = "new";
                   var formData = new FormData();
                   formData.append("file", image);
-                  formData.append("title", title);
-                  formData.append("summary", summary);
+                  formData.append("title", control.getValues().title);
+                  formData.append("summary", control.getValues().summary);
                   formData.append("tags", selectedTags);
                   formData.append("issuedby", selectedIssuers);
                   formData.append("date", date);
+                  if (addOrUpdate === "Update") {
+                    choice = "update";
+                    formData.append("_id", decisionId);
+                  }
                   axios.create({ baseURL: window.location.origin });
                   axios
-                    .post("/api/upload_decisions/new", formData)
+                    .post("/api/upload_decisions/" + choice, formData)
                     .then(function (response) {
                       console.log(response);
+                      setUpdateProgress(false);
                       setUpdateDialog(false);
                     })
                     .catch(function (error) {
                       console.log(error);
                       if (error) {
+                        setUpdateProgress(false);
+                        setUpdateDialog(false);
                         setErrorMessage("An error occured. Please try again.");
                         setAuthError(true);
                       }
@@ -1057,7 +1248,231 @@ export default function Dashboard() {
                 color="primary"
                 variant="contained"
               >
-                {addOrUpdate}
+                {!updateProgress && addOrUpdate}
+                {updateProgress && (
+                  <CircularProgress color="secondary" size={20} />
+                )}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
+            open={userDialog}
+            onClose={() => setUserDialog(false)}
+            aria-labelledby="form-dialog-title"
+          >
+            <DialogTitle id="form-dialog-title">Update User</DialogTitle>
+            <DialogContent>
+              <Controller
+                name="firstName"
+                defaultValue={firstName}
+                as={
+                  <TextField
+                    //error={titleError}
+                    value={firstName}
+                    variant="outlined"
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="firstName"
+                    label="First Name"
+                    name="firstName"
+                    autoComplete="firstName"
+                    //helperText={titleError ? "Required" : ""}
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        //setTitleError(true);
+                        //setTitle(e.target.value);
+                      } else {
+                        //setTitleError(false);
+                        setFirstName(e.target.value);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (firstName === "") {
+                        //setTitleError(true);
+                      }
+                    }}
+                    autoFocus
+                  />
+                }
+                control={control}
+              />
+
+              <Controller
+                name="lastName"
+                defaultValue={lastName}
+                as={
+                  <TextField
+                    //error={titleError}
+                    value={lastName}
+                    variant="outlined"
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="lastName"
+                    label="Last Name"
+                    name="lastName"
+                    autoComplete="lastName"
+                    //helperText={titleError ? "Required" : ""}
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        //setTitleError(true);
+                        //setTitle(e.target.value);
+                      } else {
+                        //setTitleError(false);
+                        setLastName(e.target.value);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (lastName === "") {
+                        //setTitleError(true);
+                      }
+                    }}
+                  />
+                }
+                control={control}
+              />
+
+              <Controller
+                name="email"
+                defaultValue={email}
+                as={
+                  <TextField
+                    //error={titleError}
+                    value={email}
+                    variant="outlined"
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="email"
+                    label="Email"
+                    name="email"
+                    autoComplete="email"
+                    //helperText={titleError ? "Required" : ""}
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        //setTitleError(true);
+                        //setTitle(e.target.value);
+                      } else {
+                        //setTitleError(false);
+                        setEmail(e.target.value);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (email === "") {
+                        //setTitleError(true);
+                      }
+                    }}
+                  />
+                }
+                control={control}
+              />
+
+              <FormControl variant="outlined" fullWidth>
+                <InputLabel id="demo-simple-select-outlined-label">
+                  Privilege
+                </InputLabel>
+                <Select
+                  labelId="demo-mutiple-chip-label"
+                  id="demo-mutiple-chip"
+                  value={userPrivilege}
+                  defaultValue={userPrivilege}
+                  disabled={privilege < 2}
+                  onChange={(selected) => {
+                    //var newSelectedTags = tags;
+                    //newSelectedTags.push(selected.target.value);
+                    setUserPrivilege(selected.target.value);
+                  }}
+                  input={<Input id="select-multiple-chip" />}
+                  MenuProps={MenuProps}
+                >
+                  <MenuItem key={"None"} value={"None"}>
+                    <ListItemText primary={"None"} />
+                  </MenuItem>
+                  <MenuItem key={"View"} value={"View"}>
+                    <ListItemText primary={"View"} />
+                  </MenuItem>
+                  <MenuItem key={"View/Update"} value={"View/Update"}>
+                    <ListItemText primary={"View/Update"} />
+                  </MenuItem>
+                  <MenuItem key={"Admin"} value={"Admin"}>
+                    <ListItemText primary={"Admin"} />
+                  </MenuItem>
+                </Select>
+              </FormControl>
+              <DialogActions>
+                <Button
+                  onClick={() => setUserDialog(false)}
+                  variant="contained"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    var privilegeLevel = 0;
+                    if (userPrivilege === "Add") {
+                      privilegeLevel = 1;
+                    } else if (userPrivilege === "Add/Update") {
+                      privilegeLevel = 2;
+                    } else if (userPrivilege === "Admin") {
+                      privilegeLevel = 3;
+                    }
+                    var formData = new FormData();
+                    formData.append("firstName", control.getValues().firstName);
+                    formData.append("lastName", control.getValues().lastName);
+                    formData.append("email", control.getValues().email);
+                    formData.append("privilege", privilegeLevel);
+                    formData.append("_id", userId);
+                    axios.create({ baseURL: window.location.origin });
+                    axios
+                      .post("/api/user/update", formData)
+                      .then(function (response) {
+                        console.log(response);
+                        setUpdateProgress(false);
+                        setUserDialog(false);
+                      })
+                      .catch(function (error) {
+                        console.log(error);
+                        if (error) {
+                          setUpdateProgress(false);
+                          setUserDialog(false);
+                          setErrorMessage(
+                            "An error occured. Please try again."
+                          );
+                          setAuthError(true);
+                        }
+                      });
+                  }}
+                  color="primary"
+                  variant="contained"
+                >
+                  {!updateProgress && "Update"}
+                  {updateProgress && (
+                    <CircularProgress color="secondary" size={20} />
+                  )}
+                </Button>
+              </DialogActions>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog
+            open={authError}
+            TransitionComponent={Transition}
+            keepMounted
+            onClose={() => setAuthError(false)}
+            aria-labelledby="alert-dialog-slide-title"
+            aria-describedby="alert-dialog-slide-description"
+          >
+            <DialogTitle id="alert-dialog-slide-title">{"Error"}</DialogTitle>
+            <DialogContent>
+              <DialogContentText id="alert-dialog-slide-description">
+                {errorMessage}
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setAuthError(false)} color="primary">
+                Close
               </Button>
             </DialogActions>
           </Dialog>

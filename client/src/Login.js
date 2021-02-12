@@ -152,7 +152,15 @@ export default function SignIn() {
                   })
                   .then(function (response) {
                     console.log(response);
-                    history.push({pathname: "/dashboard", state: {privilege: response.data.privilege}});
+                    history.push({
+                      pathname: "/dashboard",
+                      state: {
+                        privilege: response.data.privilege,
+                        firstName: response.data.firstName,
+                        lastName: response.data.lastName,
+                        email: response.data.email,
+                      },
+                    });
                   })
                   .catch(function (error) {
                     console.log(error);
