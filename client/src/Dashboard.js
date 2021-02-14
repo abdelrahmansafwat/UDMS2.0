@@ -85,7 +85,7 @@ function Copyright() {
   );
 }
 
-const drawerWidth = 240;
+const drawerWidth = 250;
 
 export default function Dashboard() {
   const useStyles = makeStyles((theme) => ({
@@ -147,6 +147,9 @@ export default function Dashboard() {
       },
     },
     appBarSpacer: theme.mixins.toolbar,
+    viewDialog: {
+      top: "10%",
+    },
     content: {
       flexGrow: 1,
       height: "100vh",
@@ -233,6 +236,17 @@ export default function Dashboard() {
   const [userDialog, setUserDialog] = useState(false);
   const [userId, setUserId] = useState("");
   const [decisionId, setDecisionId] = useState("");
+  const [boardDialog, setBoardDialog] = useState("");
+  const [boardSubject, setBoardSubject] = useState("");
+  const [boardDecision, setBoardDecision] = useState("");
+  const [boardDepartment, setBoardDepartment] = useState("");
+  const [boardStatus, setBoardStatus] = useState("");
+  const [boardDate, setBoardDate] = useState("");
+  const [board, setBoard] = useState(false);
+  const [boardDecisions, setBoardDecisions] = useState(false);
+  const [currentBoardDecision, setCurrentBoardDecision] = useState([]);
+  const [boardDecisionId, setBoardDecisionId] = useState("");
+  const [boardViewDialog, setBoardViewDialog] = useState(false);
   const { control } = useForm();
 
   const ITEM_HEIGHT = 48;
@@ -251,6 +265,141 @@ export default function Dashboard() {
   const filterModel = {
     items: [{ columnField: "title", operatorValue: "contains", value: "" }],
   };
+
+  const baordDecisionsColumns = [
+    { field: "id", headerName: "ID", width: 70, filterable: false },
+    { field: "subject", headerName: "Subject", width: 130 },
+    { field: "department", headerName: "Department", width: 130 },
+    { field: "decision", headerName: "Decision", width: 130 },
+    { field: "date", headerName: "Date", type: "date", width: 130 },
+    { field: "status", headerName: "Status", width: 130 },
+    {
+      field: "viewButton",
+      headerName: "View",
+      width: 130,
+      disableClickEventBubbling: true,
+      filterable: false,
+      sortable: false,
+      renderCell: (params) => {
+        //console.log(params.row.viewButton);
+        var index = params.row.id;
+
+        const onClick = async () => {
+          console.log("Viewing decision #" + index);
+          var decision = boardDecisions[index - 1];
+          /*
+          await axios
+            .get("/api/retrieve_decisions/image/" + decision.image, {
+              responseType: "arraybuffer",
+            })
+            .then(
+              (response) =>
+                (decision.imageBase64 =
+                  "data:;base64," +
+                  Buffer.from(response.data, "binary").toString("base64"))
+            );
+          */
+          setCurrentBoardDecision(decision);
+          setBoardViewDialog(true);
+        };
+
+        return (
+          <Button
+            variant="contained"
+            onClick={() => onClick()}
+            disabled={privilege < 2}
+          >
+            View
+          </Button>
+        );
+      },
+    },
+    {
+      field: "updateButton",
+      headerName: "Update",
+      width: 130,
+      disableClickEventBubbling: true,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        //console.log(params.row.viewButton);
+
+        const onClick = async () => {
+          setBoardSubject(params.row.subject);
+          setBoardDecision(params.row.decision);
+          setBoardDepartment(params.row.department);
+          setBoardStatus(params.row.status);
+          setBoardDate(params.row.date);
+          setBoardDecisionId(params.row._id);
+          setAddOrUpdate("Update");
+          //setTitleError(false);
+          //setSummaryError(false);
+          //setTagsError(false);
+          //setIssuedByError(false);
+          setBoardDialog(true);
+        };
+
+        return (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => onClick()}
+            disabled={privilege < 2}
+          >
+            Update
+          </Button>
+        );
+      },
+    },
+    {
+      field: "deleteButton",
+      headerName: "Delete",
+      width: 130,
+      disableClickEventBubbling: true,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        //console.log(params.row.viewButton);
+        var index = params.row.id;
+
+        const onClick = async () => {
+          console.log("Viewing decision #" + index);
+          var decision = boardDecisions[index - 1];
+          var alldecisions = boardDecisions;
+          axios
+            .post("/api/upload_board_decisions/delete", {
+              _id: decision._id,
+            })
+            .then(function (response) {
+              console.log(response);
+              console.log(alldecisions.length);
+              alldecisions.splice(index - 1, 1);
+              console.log(alldecisions.length);
+              setBoardDecisions(alldecisions);
+              //history.push("/dashboard");
+            })
+            .catch(function (error) {
+              console.log(error);
+              if (error) {
+                setErrorMessage("An error occured. Please try again.");
+                setAuthError(true);
+              }
+            });
+        };
+
+        return (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => onClick()}
+            disabled={privilege < 2}
+          >
+            Delete
+          </Button>
+        );
+      },
+    },
+  ];
 
   const decisionsColumns = [
     { field: "id", headerName: "ID", width: 70, filterable: false },
@@ -536,6 +685,33 @@ export default function Dashboard() {
     setReady(true);
   };
 
+  const getAllBoardDecisions = async () => {
+    //console.log(history.location.state.privilege);
+    setReady(false);
+    if (privilege > 0) {
+      axios.create({ baseURL: window.location.origin });
+      await axios
+        .get("/api/retrieve_board_decisions/all")
+        .then(function (response) {
+          var decisions = response.data.decisions;
+          decisions.forEach((value, index) => {
+            decisions[index].id = index + 1;
+            decisions[index].date = new Date(
+              decisions[index].date
+            ).toLocaleDateString();
+          });
+          console.log(decisions);
+          setBoardDecisions(decisions);
+        })
+        .catch(function (error) {
+          console.log(error);
+          setAuthError(true);
+          setErrorMessage("An error occured. Please try again.");
+        });
+    }
+    setReady(true);
+  };
+
   const getAllUsers = async () => {
     //console.log(history.location.state.privilege);
     setReady(false);
@@ -644,6 +820,8 @@ export default function Dashboard() {
                   event.stopPropagation();
                   if (administration) {
                     getAllUsers();
+                  } else if (board) {
+                    getAllBoardDecisions();
                   } else {
                     getAllDecisions();
                   }
@@ -661,17 +839,32 @@ export default function Dashboard() {
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    setTitle("");
-                    setSummary("");
-                    setSelectedTags([]);
-                    setIssuedBy("");
-                    setDate(new Date());
-                    setAddOrUpdate("Add");
-                    setTitleError(false);
-                    setSummaryError(false);
-                    setTagsError(false);
-                    setIssuedByError(false);
-                    setUpdateDialog(true);
+
+                    if (board) {
+                      setBoardSubject("");
+                      setBoardDecision("");
+                      setBoardDepartment("");
+                      setBoardStatus([]);
+                      setBoardDate(new Date());
+                      setAddOrUpdate("Add");
+                      //setTitleError(false);
+                      //setSummaryError(false);
+                      //setTagsError(false);
+                      //setIssuedByError(false);
+                      setBoardDialog(true);
+                    } else {
+                      setTitle("");
+                      setSummary("");
+                      setSelectedTags([]);
+                      setSelectedIssuers([]);
+                      setDate(new Date());
+                      setAddOrUpdate("Add");
+                      setTitleError(false);
+                      setSummaryError(false);
+                      setTagsError(false);
+                      setIssuedByError(false);
+                      setUpdateDialog(true);
+                    }
                   }}
                 >
                   <ListItemIcon>
@@ -681,7 +874,7 @@ export default function Dashboard() {
                 </ListItem>
               )}
 
-              {privilege > 1 && (
+              {privilege > 1 && !board && (
                 <ListItem
                   button
                   onClick={(event) => {
@@ -745,14 +938,21 @@ export default function Dashboard() {
               <ListItem
                 button
                 onClick={(event) => {
-                  getAllDecisions();
+                  if(board){
+                    getAllDecisions();
+                    setBoard(false);
+                  }
+                  else {
+                    getAllBoardDecisions();
+                    setBoard(true);
+                  }
                   setAdministration(false);
                 }}
               >
                 <ListItemIcon>
                   <GavelIcon />
                 </ListItemIcon>
-                <ListItemText primary="Decisions" />
+                <ListItemText primary={ board ? "Government Decisions" : "Board Decisions" } />
               </ListItem>
               <ListItem
                 button
@@ -783,10 +983,21 @@ export default function Dashboard() {
                   }}
                 />
               )}
-              {ready && !administration && (
+              {ready && !administration && !board && (
                 <DataGrid
                   rows={decisions}
                   columns={decisionsColumns}
+                  pageSize={5}
+                  checkboxSelection
+                  showToolbar={true}
+                  filterModel={filterModel}
+                />
+              )}
+
+              {ready && !administration && board && (
+                <DataGrid
+                  rows={boardDecisions}
+                  columns={baordDecisionsColumns}
                   pageSize={5}
                   checkboxSelection
                   showToolbar={true}
@@ -943,7 +1154,7 @@ export default function Dashboard() {
                 </Typography>
               </Toolbar>
             </AppBar>
-            <List>
+            <List className={classes.viewDialog}>
               <img alt="decision" src={currentDecision.imageBase64} />
               <ListItem button>
                 <ListItemText
@@ -984,6 +1195,61 @@ export default function Dashboard() {
                     })
                   }
                 />
+              </ListItem>
+              <Divider />
+            </List>
+          </Dialog>
+
+          <Dialog
+            fullScreen
+            open={boardViewDialog}
+            
+            onClose={() => setBoardViewDialog(false)}
+            TransitionComponent={Transition}
+          >
+            <AppBar className={classes.appBar}>
+              <Toolbar>
+                <IconButton
+                  edge="start"
+                  color="inherit"
+                  onClick={() => setBoardViewDialog(false)}
+                  aria-label="close"
+                >
+                  <CloseIcon />
+                </IconButton>
+                <Typography variant="h6" className={classes.title}>
+                  View Decision
+                </Typography>
+              </Toolbar>
+            </AppBar>
+            <List className={classes.viewDialog}>
+              <ListItem button>
+                <ListItemText
+                  primary="Subject"
+                  secondary={currentBoardDecision.subject}
+                />
+              </ListItem>
+              <Divider />
+              <ListItem button>
+                <ListItemText
+                  primary="Department"
+                  secondary={currentBoardDecision.department}
+                />
+              </ListItem>
+              <Divider />
+              <ListItem button>
+                <ListItemText
+                  primary="Decision"
+                  secondary={currentBoardDecision.decision}
+                />
+              </ListItem>
+              <Divider />
+              <ListItem button>
+                <ListItemText primary="Date" secondary={currentBoardDecision.date} />
+              </ListItem>
+              <Divider />
+              <ListItem button>
+                <ListItemText primary="Status" secondary={currentBoardDecision.status} />
               </ListItem>
               <Divider />
             </List>
@@ -1256,6 +1522,218 @@ export default function Dashboard() {
           </Dialog>
 
           <Dialog
+            open={boardDialog}
+            onClose={() => setBoardDialog(false)}
+            aria-labelledby="form-dialog-title"
+          >
+            <DialogTitle id="form-dialog-title">{addOrUpdate}</DialogTitle>
+            <DialogContent>
+              <Controller
+                name="boardSubject"
+                as={
+                  <TextField
+                    //error={titleError}
+                    value={boardSubject}
+                    variant="outlined"
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="boardSubject"
+                    label="Subject"
+                    name="boardSubject"
+                    autoComplete="boardSubject"
+                    //helperText={titleError ? "Required" : ""}
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        //setTitleError(true);
+                        setBoardSubject(e.target.value);
+                      } else {
+                        //setTitleError(false);
+                        setBoardSubject(e.target.value);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (boardSubject === "") {
+                        //setTitleError(true);
+                      }
+                    }}
+                    autoFocus
+                  />
+                }
+                control={control}
+              />
+
+              <Controller
+                name="boardDecision"
+                as={
+                  <TextField
+                    //error={summaryError}
+                    value={boardDecision}
+                    variant="outlined"
+                    margin="normal"
+                    required
+                    fullWidth
+                    multiline
+                    id="boardDecision"
+                    label="Decision"
+                    name="boardDecision"
+                    autoComplete="boardDecision"
+                    //helperText={summaryError ? "Required" : ""}
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        //setSummaryError(true);
+                        setBoardDecision(e.target.value);
+                      } else {
+                        //setSummaryError(false);
+                        setBoardDecision(e.target.value);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (boardDecision === "") {
+                        //setSummaryError(true);
+                      }
+                    }}
+                  />
+                }
+                control={control}
+              />
+
+              <FormControl variant="outlined" fullWidth>
+                <InputLabel id="demo-simple-select-outlined-label">
+                  Department
+                </InputLabel>
+                <Select
+                  labelId="demo-mutiple-chip-label"
+                  id="demo-mutiple-chip"
+                  value={boardDepartment}
+                  onChange={(selected) => {
+                    //var newSelectedTags = tags;
+                    //newSelectedTags.push(selected.target.value);
+                    setBoardDepartment(selected.target.value);
+                  }}
+                  input={<Input id="select-multiple-chip" />}
+                  MenuProps={MenuProps}
+                >
+                  <MenuItem
+                    key={"Managerial Affairs"}
+                    value={"Managerial Affairs"}
+                  >
+                    <ListItemText primary={"Managerial Affairs"} />
+                  </MenuItem>
+                  <MenuItem
+                    key={"Education and Student Affairs"}
+                    value={"Education and Student Affairs"}
+                  >
+                    <ListItemText primary={"Education and Student Affairs"} />
+                  </MenuItem>
+                  <MenuItem
+                    key={"Postgraduate Affairs"}
+                    value={"Postgraduate Affairs"}
+                  >
+                    <ListItemText primary={"Postgraduate Affairs"} />
+                  </MenuItem>
+                  <MenuItem
+                    key={"Development and Innovation Affairs"}
+                    value={"Development and Innovation Affairs"}
+                  >
+                    <ListItemText
+                      primary={"Development and Innovation Affairs"}
+                    />
+                  </MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl variant="outlined" fullWidth>
+                <InputLabel id="demo-simple-select-outlined-label">
+                  Status
+                </InputLabel>
+                <Select
+                  labelId="demo-mutiple-chip-label"
+                  id="demo-mutiple-chip"
+                  value={boardStatus}
+                  onChange={(selected) => {
+                    //var newSelectedTags = tags;
+                    //newSelectedTags.push(selected.target.value);
+                    setBoardStatus(selected.target.value);
+                  }}
+                  input={<Input id="select-multiple-chip" />}
+                  MenuProps={MenuProps}
+                >
+                  <MenuItem key={"Finished"} value={"Finished"}>
+                    <ListItemText primary={"Finished"} />
+                  </MenuItem>
+                  <MenuItem key={"Postponed"} value={"Postponed"}>
+                    <ListItemText primary={"Postponed"} />
+                  </MenuItem>
+                </Select>
+              </FormControl>
+
+              <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                <KeyboardDatePicker
+                  disableToolbar
+                  fullWidth
+                  variant="outlined"
+                  margin="normal"
+                  id="date"
+                  label="Date"
+                  value={boardDate}
+                  onChange={(date) => setBoardDate(date)}
+                  KeyboardButtonProps={{
+                    "aria-label": "change date",
+                  }}
+                />
+              </MuiPickersUtilsProvider>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setBoardDialog(false)} variant="contained">
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  //console.log(selectedTags);
+                  console.log(control.getValues());
+                  setUpdateProgress(true);
+                  var choice = "new";
+                  if (addOrUpdate === "Update") {
+                    choice = "update";
+                  }
+                  axios.create({ baseURL: window.location.origin });
+                  axios
+                    .post("/api/upload_board_decisions/" + choice, {
+                      subject: control.getValues().boardSubject,
+                      department: boardDepartment,
+                      decision: control.getValues().boardDecision,
+                      status: boardStatus,
+                      date: boardDate,
+                      ...(addOrUpdate === "Update" ? {_id: boardDecisionId} :  {})
+                    })
+                    .then(function (response) {
+                      console.log(response);
+                      setUpdateProgress(false);
+                      setBoardDialog(false);
+                    })
+                    .catch(function (error) {
+                      console.log(error);
+                      if (error) {
+                        setUpdateProgress(false);
+                        setUpdateDialog(false);
+                        setErrorMessage("An error occured. Please try again.");
+                        setAuthError(true);
+                      }
+                    });
+                }}
+                color="primary"
+                variant="contained"
+              >
+                {!updateProgress && addOrUpdate}
+                {updateProgress && (
+                  <CircularProgress color="secondary" size={20} />
+                )}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
             open={userDialog}
             onClose={() => setUserDialog(false)}
             aria-labelledby="form-dialog-title"
@@ -1424,7 +1902,7 @@ export default function Dashboard() {
                         lastName: control.getValues().lastName,
                         email: control.getValues().email,
                         privilege: privilegeLevel,
-                        _id: userId
+                        _id: userId,
                       })
                       .then(function (response) {
                         console.log(response);

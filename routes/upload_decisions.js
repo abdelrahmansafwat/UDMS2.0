@@ -42,6 +42,7 @@ router.post("/new", uploadDisk.single("file"), async (req, res) => {
     summary: req.body.summary,
     image: req.file.originalname,
     tags: req.body.tags.split(","),
+    date: req.body.date,
   });
 
   newDecision.save((err, data) => {
@@ -84,7 +85,7 @@ router.post("/update", uploadDisk.single("file"), async (req, res) => {
       }
       else {
         res.status(200).json({
-          message: "Var saved",
+          message: "Decision updated",
         });
       }
     }
