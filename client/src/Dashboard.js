@@ -955,9 +955,8 @@ export default function Dashboard() {
                 <ListItemIcon>
                   <GavelIcon />
                 </ListItemIcon>
-                <ListItemText
-                  primary={board ? "Government Decisions" : "Board Decisions"}
-                />
+                {/*<ListItemText primary={ board ? "Government Decisions" : "Board Decisions" } />*/}
+                <ListItemText primary={ !board ? "Government Decisions" : "Board Decisions" } />
               </ListItem>
               <ListItem
                 button
