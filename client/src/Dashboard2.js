@@ -242,7 +242,7 @@ export default function Dashboard() {
   const [boardDepartment, setBoardDepartment] = useState("");
   const [boardStatus, setBoardStatus] = useState("");
   const [boardDate, setBoardDate] = useState("");
-  const [board, setBoard] = useState(false);
+  const [board, setBoard] = useState(true);
   const [boardDecisions, setBoardDecisions] = useState(false);
   const [currentBoardDecision, setCurrentBoardDecision] = useState([]);
   const [boardDecisionId, setBoardDecisionId] = useState("");
@@ -745,7 +745,7 @@ export default function Dashboard() {
   const constructor = async () => {
     if (constructorHasRun) return;
     setConstructorHasRun(true);
-    await getAllDecisions();
+    await getAllBoardDecisions();
   };
 
   constructor();
@@ -938,7 +938,7 @@ export default function Dashboard() {
               <ListItem
                 button
                 onClick={(event) => {
-                  /*
+                /*
                   if(board){
                     getAllDecisions();
                     setBoard(false);
@@ -948,23 +948,21 @@ export default function Dashboard() {
                     setBoard(true);
                   }
                   */
-                  getAllDecisions();
+                 getAllBoardDecisions();
                   setAdministration(false);
                 }}
               >
                 <ListItemIcon>
                   <GavelIcon />
                 </ListItemIcon>
-                <ListItemText
-                  primary={board ? "Government Decisions" : "Board Decisions"}
-                />
+                <ListItemText primary={ board ? "Government Decisions" : "Board Decisions" } />
               </ListItem>
               <ListItem
                 button
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  history.push("/login");
+                  history.push("/board");
                 }}
               >
                 <ListItemIcon>
@@ -1208,6 +1206,7 @@ export default function Dashboard() {
           <Dialog
             fullScreen
             open={boardViewDialog}
+            
             onClose={() => setBoardViewDialog(false)}
             TransitionComponent={Transition}
           >
@@ -1249,17 +1248,11 @@ export default function Dashboard() {
               </ListItem>
               <Divider />
               <ListItem button>
-                <ListItemText
-                  primary="Date"
-                  secondary={currentBoardDecision.date}
-                />
+                <ListItemText primary="Date" secondary={currentBoardDecision.date} />
               </ListItem>
               <Divider />
               <ListItem button>
-                <ListItemText
-                  primary="Status"
-                  secondary={currentBoardDecision.status}
-                />
+                <ListItemText primary="Status" secondary={currentBoardDecision.status} />
               </ListItem>
               <Divider />
             </List>
@@ -1715,9 +1708,7 @@ export default function Dashboard() {
                       decision: control.getValues().boardDecision,
                       status: boardStatus,
                       date: boardDate,
-                      ...(addOrUpdate === "Update"
-                        ? { _id: boardDecisionId }
-                        : {}),
+                      ...(addOrUpdate === "Update" ? {_id: boardDecisionId} :  {})
                     })
                     .then(function (response) {
                       console.log(response);
