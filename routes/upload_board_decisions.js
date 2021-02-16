@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const boardDecisionModel = require("../models/boardDecision");
+const meetingModel = require("../models/meeting");
 const path = require("path");
 
 //New decision route
@@ -23,6 +24,27 @@ router.post("/new", async (req, res) => {
     } else {
       res.status(200).json({
         message: "Decision saved",
+      });
+    }
+  });
+});
+
+//New meeting route
+router.post("/new-meeting", async (req, res) => {
+  console.log(req.body);
+
+  let newMeeting = new meetingModel({
+    date: req.body.date,
+  });
+
+  newMeeting.save((err, data) => {
+    if (err) {
+      res.status(500).json({
+        message: err.message,
+      });
+    } else {
+      res.status(200).json({
+        message: "Meeting saved",
       });
     }
   });
@@ -57,9 +79,45 @@ router.post("/update", async (req, res) => {
   );
 });
 
+//Update meeting route
+router.post("/update-meeting", async (req, res) => {
+  console.log(req);
+
+
+  let newMeeting = await meetingModel.findOneAndUpdate(
+    { _id: req.body._id },
+    {
+      date: req.body.date,
+    },
+    { new: true },
+    (err, data) => {
+      if (err) {
+        res.status(500).json({
+          message: err.message,
+        });
+      } else {
+        res.status(200).json({
+          message: "Meeting updated",
+        });
+      }
+    }
+  );
+});
+
 //Delete decision route
 router.post("/delete", async (req, res) => {
   boardDecisionModel.deleteOne({ _id: req.body._id }, function (err) {
+    if (err) {
+      res.status(500).json({
+        message: err.message,
+      });
+    }
+  });
+});
+
+//Delete meeting route
+router.post("/delete-meeting", async (req, res) => {
+  meetingModel.deleteOne({ _id: req.body._id }, function (err) {
     if (err) {
       res.status(500).json({
         message: err.message,

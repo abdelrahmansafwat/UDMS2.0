@@ -7,8 +7,9 @@ mongoose.set('useFindAndModify', false);
 let boardDecisionSchema = new Schema({
     subject: { type: String, required: true },
     department: { type: String, required: true },
-    decision: { type: String, required: true },
+    decision: { type: String },
     status: { type: String, required: true },
+    meeting: { type: Number, required: true },
     date: { type: Date, default: Date.now },
 });
 

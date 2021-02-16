@@ -44,6 +44,7 @@ import Checkbox from "@material-ui/core/Checkbox";
 import history from "./history";
 import CloseIcon from "@material-ui/icons/Close";
 import GavelIcon from "@material-ui/icons/Gavel";
+import AssignmentIcon from "@material-ui/icons/Assignment";
 import SupervisorAccountIcon from "@material-ui/icons/SupervisorAccount";
 import DateFnsUtils from "@date-io/date-fns";
 import {
@@ -241,12 +242,19 @@ export default function Dashboard() {
   const [boardDecision, setBoardDecision] = useState("");
   const [boardDepartment, setBoardDepartment] = useState("");
   const [boardStatus, setBoardStatus] = useState("");
-  const [boardDate, setBoardDate] = useState("");
+  const [boardDate, setBoardDate] = useState(new Date());
   const [board, setBoard] = useState(true);
   const [boardDecisions, setBoardDecisions] = useState(false);
   const [currentBoardDecision, setCurrentBoardDecision] = useState([]);
   const [boardDecisionId, setBoardDecisionId] = useState("");
   const [boardViewDialog, setBoardViewDialog] = useState(false);
+  const [meetingDialog, setMeetingDialog] = useState(false);
+  const [meetings, setMeetings] = useState([]);
+  const [meetingDate, setMeetingDate] = useState(new Date());
+  const [meetingNumber, setMeetingNumber] = useState([]);
+  const [currentMeeting, setCurrentMeeting] = useState([]);
+  const [selectedMeeting, setSelectedMeeting] = useState([]);
+  const [meetingGrid, setMeetingGrid] = useState(false);
   const { control } = useForm();
 
   const ITEM_HEIGHT = 48;
@@ -376,6 +384,133 @@ export default function Dashboard() {
               alldecisions.splice(index - 1, 1);
               console.log(alldecisions.length);
               setBoardDecisions(alldecisions);
+              //history.push("/dashboard");
+            })
+            .catch(function (error) {
+              console.log(error);
+              if (error) {
+                setErrorMessage("An error occured. Please try again.");
+                setAuthError(true);
+              }
+            });
+        };
+
+        return (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => onClick()}
+            disabled={privilege < 2}
+          >
+            Delete
+          </Button>
+        );
+      },
+    },
+  ];
+
+  const meetingsColumns = [
+    { field: "id", headerName: "Number", width: 130 },
+    { field: "date", headerName: "Date", type: "date", width: 130 },
+    {
+      field: "viewButton",
+      headerName: "View",
+      width: 130,
+      disableClickEventBubbling: true,
+      filterable: false,
+      sortable: false,
+      renderCell: (params) => {
+        //console.log(params.row.viewButton);
+        var index = params.row.number;
+
+        const onClick = async () => {
+          console.log("Viewing decision #" + index);
+          var meeting = meetings[index - 1];
+          /*
+          await axios
+            .get("/api/retrieve_decisions/image/" + decision.image, {
+              responseType: "arraybuffer",
+            })
+            .then(
+              (response) =>
+                (decision.imageBase64 =
+                  "data:;base64," +
+                  Buffer.from(response.data, "binary").toString("base64"))
+            );
+          */
+          setCurrentMeeting(meeting);
+          setMeetingDialog(true);
+        };
+
+        return (
+          <Button
+            variant="contained"
+            onClick={() => onClick()}
+            disabled={privilege < 2}
+          >
+            View
+          </Button>
+        );
+      },
+    },
+    {
+      field: "updateButton",
+      headerName: "Update",
+      width: 130,
+      disableClickEventBubbling: true,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        //console.log(params.row.viewButton);
+
+        const onClick = async () => {
+          setMeetingNumber(params.row.number);
+          setMeetingDate(params.row.date);
+          setAddOrUpdate("Update");
+          //setTitleError(false);
+          //setSummaryError(false);
+          //setTagsError(false);
+          //setIssuedByError(false);
+          setBoardDialog(true);
+        };
+
+        return (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => onClick()}
+            disabled={privilege < 2}
+          >
+            Update
+          </Button>
+        );
+      },
+    },
+    {
+      field: "deleteButton",
+      headerName: "Delete",
+      width: 130,
+      disableClickEventBubbling: true,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => {
+        //console.log(params.row.viewButton);
+        var index = params.row.number;
+
+        const onClick = async () => {
+          console.log("Viewing decision #" + index);
+          var meeting = meetings[index - 1];
+          var allmeetings = meetings;
+          axios
+            .post("/api/upload_board_decisions/delete-meeting", {
+              _id: meeting._id,
+            })
+            .then(function (response) {
+              console.log(response);
+              console.log(meetings.length);
+              allmeetings.splice(index - 1, 1);
+              console.log(allmeetings.length);
+              setMeetings(allmeetings);
               //history.push("/dashboard");
             })
             .catch(function (error) {
@@ -708,6 +843,26 @@ export default function Dashboard() {
           setAuthError(true);
           setErrorMessage("An error occured. Please try again.");
         });
+
+      await axios
+        .get("/api/retrieve_board_decisions/all-meetings")
+        .then(function (response) {
+          console.log(response);
+          var allmeetings = response.data.meetings;
+          allmeetings.forEach((value, index) => {
+            allmeetings[index].id = allmeetings[index].number
+            allmeetings[index].date = new Date(
+              allmeetings[index].date
+            ).toLocaleDateString();
+          });
+          console.log(allmeetings);
+          setMeetings(allmeetings);
+        })
+        .catch(function (error) {
+          console.log(error);
+          setAuthError(true);
+          setErrorMessage("An error occured. Please try again.");
+        });
     }
     setReady(true);
   };
@@ -820,7 +975,7 @@ export default function Dashboard() {
                   event.stopPropagation();
                   if (administration) {
                     getAllUsers();
-                  } else if (board) {
+                  } else if (board || meetingGrid) {
                     getAllBoardDecisions();
                   } else {
                     getAllDecisions();
@@ -832,6 +987,23 @@ export default function Dashboard() {
                 </ListItemIcon>
                 <ListItemText primary="Refresh" />
               </ListItem>
+
+              {privilege > 1 && board && (
+                <ListItem
+                  button
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    setMeetingDialog(true);
+                  }}
+                >
+                  <ListItemIcon>
+                    <AddCircleIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Add Board Meeting" />
+                </ListItem>
+              )}
 
               {privilege > 1 && (
                 <ListItem
@@ -870,7 +1042,9 @@ export default function Dashboard() {
                   <ListItemIcon>
                     <AddCircleIcon />
                   </ListItemIcon>
-                  <ListItemText primary="Add Decision" />
+                  <ListItemText
+                    primary={!board ? "Add Decision" : "Add Subject"}
+                  />
                 </ListItem>
               )}
 
@@ -884,7 +1058,7 @@ export default function Dashboard() {
                   }}
                 >
                   <ListItemIcon>
-                    <LocalOfferIcon />
+                    <AddCircleIcon />
                   </ListItemIcon>
                   <ListItemText primary="Add Tags/Issuers" />
                 </ListItem>
@@ -927,6 +1101,7 @@ export default function Dashboard() {
                   onClick={(event) => {
                     getAllUsers();
                     setAdministration(true);
+                    setMeetingGrid(false);
                   }}
                 >
                   <ListItemIcon>
@@ -938,7 +1113,7 @@ export default function Dashboard() {
               <ListItem
                 button
                 onClick={(event) => {
-                /*
+                  /*
                   if(board){
                     getAllDecisions();
                     setBoard(false);
@@ -948,16 +1123,44 @@ export default function Dashboard() {
                     setBoard(true);
                   }
                   */
-                 getAllBoardDecisions();
+                  getAllBoardDecisions();
+                  setMeetingGrid(true);
                   setAdministration(false);
+                }}
+              >
+                <ListItemIcon>
+                  <AssignmentIcon />
+                </ListItemIcon>
+                {/*<ListItemText primary={ board ? "Government Decisions" : "Board Decisions" } />*/}
+                <ListItemText primary={"Board Meetings"} />
+              </ListItem>
+              <ListItem
+                button
+                onClick={(event) => {
+                  /*
+                  if(board){
+                    getAllDecisions();
+                    setBoard(false);
+                  }
+                  else {
+                    getAllBoardDecisions();
+                    setBoard(true);
+                  }
+                  */
+                  getAllBoardDecisions();
+                  setAdministration(false);
+                  setMeetingGrid(false);
                 }}
               >
                 <ListItemIcon>
                   <GavelIcon />
                 </ListItemIcon>
                 {/*<ListItemText primary={ board ? "Government Decisions" : "Board Decisions" } />*/}
-                <ListItemText primary={ !board ? "Government Decisions" : "Board Decisions" } />
+                <ListItemText
+                  primary={!board ? "Government Decisions" : "Board Decisions"}
+                />
               </ListItem>
+
               <ListItem
                 button
                 onClick={(event) => {
@@ -987,7 +1190,7 @@ export default function Dashboard() {
                   }}
                 />
               )}
-              {ready && !administration && !board && (
+              {ready && !administration && !board && !meetingGrid && (
                 <DataGrid
                   rows={decisions}
                   columns={decisionsColumns}
@@ -998,7 +1201,18 @@ export default function Dashboard() {
                 />
               )}
 
-              {ready && !administration && board && (
+              {ready && !administration && board && meetingGrid && (
+                <DataGrid
+                  rows={meetings}
+                  columns={meetingsColumns}
+                  pageSize={5}
+                  checkboxSelection
+                  showToolbar={true}
+                  filterModel={filterModel}
+                />
+              )}
+
+              {ready && !administration && board && !meetingGrid && (
                 <DataGrid
                   rows={boardDecisions}
                   columns={baordDecisionsColumns}
@@ -1009,7 +1223,7 @@ export default function Dashboard() {
                 />
               )}
 
-              {ready && administration && (
+              {ready && administration && !meetingGrid && (
                 <DataGrid
                   rows={users}
                   columns={usersColumns}
@@ -1138,6 +1352,72 @@ export default function Dashboard() {
           </Dialog>
 
           <Dialog
+            open={meetingDialog}
+            TransitionComponent={Transition}
+            keepMounted
+            onClose={() => setMeetingDialog(false)}
+            aria-labelledby="alert-dialog-slide-title"
+            aria-describedby="alert-dialog-slide-description"
+          >
+            <DialogTitle id="alert-dialog-slide-title">
+              {"Add Meeting"}
+            </DialogTitle>
+            <DialogContent>
+              <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                <KeyboardDatePicker
+                  disableToolbar
+                  fullWidth
+                  variant="outlined"
+                  margin="normal"
+                  id="date"
+                  label="Date"
+                  value={meetingDate}
+                  onChange={(date) => setMeetingDate(date)}
+                  KeyboardButtonProps={{
+                    "aria-label": "change date",
+                  }}
+                />
+              </MuiPickersUtilsProvider>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setMeetingDialog(false)} color="primary">
+                Close
+              </Button>
+              <Button
+                onClick={() => {
+                  setUpdateProgress(true);
+                  axios.create({ baseURL: window.location.origin });
+                  axios
+                    .post("/api/upload_board_decisions/new-meeting", {
+                      date: meetingDate,
+                    })
+                    .then(function (response) {
+                      console.log(response);
+                      setUpdateProgress(false);
+                      setMeetingDialog(false);
+                    })
+                    .catch(function (error) {
+                      console.log(error);
+                      if (error) {
+                        setUpdateProgress(false);
+                        setMeetingDialog(false);
+                        setErrorMessage("An error occured. Please try again.");
+                        setAuthError(true);
+                      }
+                    });
+                }}
+                color="primary"
+                variant="contained"
+              >
+                {!updateProgress && addOrUpdate}
+                {updateProgress && (
+                  <CircularProgress color="secondary" size={20} />
+                )}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
             fullScreen
             open={viewDialog}
             onClose={() => setViewDialog(false)}
@@ -1207,7 +1487,6 @@ export default function Dashboard() {
           <Dialog
             fullScreen
             open={boardViewDialog}
-            
             onClose={() => setBoardViewDialog(false)}
             TransitionComponent={Transition}
           >
@@ -1249,11 +1528,17 @@ export default function Dashboard() {
               </ListItem>
               <Divider />
               <ListItem button>
-                <ListItemText primary="Date" secondary={currentBoardDecision.date} />
+                <ListItemText
+                  primary="Date"
+                  secondary={currentBoardDecision.date}
+                />
               </ListItem>
               <Divider />
               <ListItem button>
-                <ListItemText primary="Status" secondary={currentBoardDecision.status} />
+                <ListItemText
+                  primary="Status"
+                  secondary={currentBoardDecision.status}
+                />
               </ListItem>
               <Divider />
             </List>
@@ -1567,40 +1852,31 @@ export default function Dashboard() {
                 control={control}
               />
 
-              <Controller
-                name="boardDecision"
-                as={
-                  <TextField
-                    //error={summaryError}
-                    value={boardDecision}
-                    variant="outlined"
-                    margin="normal"
-                    required
-                    fullWidth
-                    multiline
-                    id="boardDecision"
-                    label="Decision"
-                    name="boardDecision"
-                    autoComplete="boardDecision"
-                    //helperText={summaryError ? "Required" : ""}
-                    onChange={(e) => {
-                      if (e.target.value === "") {
-                        //setSummaryError(true);
-                        setBoardDecision(e.target.value);
-                      } else {
-                        //setSummaryError(false);
-                        setBoardDecision(e.target.value);
-                      }
-                    }}
-                    onBlur={() => {
-                      if (boardDecision === "") {
-                        //setSummaryError(true);
-                      }
-                    }}
-                  />
-                }
-                control={control}
-              />
+              <FormControl variant="outlined" fullWidth>
+                <InputLabel id="demo-simple-select-outlined-label">
+                  Meeting
+                </InputLabel>
+                <Select
+                  labelId="demo-mutiple-chip-label"
+                  id="demo-mutiple-chip"
+                  value={selectedMeeting}
+                  onChange={(selected) => {
+                    //var newSelectedTags = tags;
+                    //newSelectedTags.push(selected.target.value);
+                    setSelectedMeeting(selected.target.value);
+                  }}
+                  input={<Input id="select-multiple-chip" />}
+                  MenuProps={MenuProps}
+                >
+                  {meetings.map(function (meeting) {
+                    return (
+                      <MenuItem key={meeting.number} value={meeting.number}>
+                        <ListItemText primary={meeting.number} />
+                      </MenuItem>
+                    );
+                  })}
+                </Select>
+              </FormControl>
 
               <FormControl variant="outlined" fullWidth>
                 <InputLabel id="demo-simple-select-outlined-label">
@@ -1709,7 +1985,9 @@ export default function Dashboard() {
                       decision: control.getValues().boardDecision,
                       status: boardStatus,
                       date: boardDate,
-                      ...(addOrUpdate === "Update" ? {_id: boardDecisionId} :  {})
+                      ...(addOrUpdate === "Update"
+                        ? { _id: boardDecisionId }
+                        : {}),
                     })
                     .then(function (response) {
                       console.log(response);
