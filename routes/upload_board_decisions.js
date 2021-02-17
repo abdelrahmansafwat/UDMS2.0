@@ -104,6 +104,32 @@ router.post("/update-meeting", async (req, res) => {
   );
 });
 
+//Update meeting route
+router.post("/subject-decision", async (req, res) => {
+  console.log(req);
+
+
+  let newDecision = await boardDecisionModel.findOneAndUpdate(
+    { _id: req.body._id },
+    {
+      decision: req.body.decision,
+      status: req.body.status
+    },
+    { new: true },
+    (err, data) => {
+      if (err) {
+        res.status(500).json({
+          message: err.message,
+        });
+      } else {
+        res.status(200).json({
+          message: "Meeting updated",
+        });
+      }
+    }
+  );
+});
+
 //Delete decision route
 router.post("/delete", async (req, res) => {
   boardDecisionModel.deleteOne({ _id: req.body._id }, function (err) {

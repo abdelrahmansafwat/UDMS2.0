@@ -260,7 +260,8 @@ export default function Dashboard() {
   const [meetingGrid, setMeetingGrid] = useState(false);
   const [meetingViewDialog, setMeetingViewDialog] = useState(false);
   const [printDialog, setPrintDialog] = useState(false);
-  const [componentRef, setComponentRef] = useState(false);
+  const [componentRef, setComponentRef] = useState(null);
+  const [decisionDialog, setDecisionDialog] = useState(false);
   const { control } = useForm();
 
   const ITEM_HEIGHT = 48;
@@ -324,6 +325,39 @@ export default function Dashboard() {
             disabled={privilege < 2}
           >
             View
+          </Button>
+        );
+      },
+    },
+    {
+      field: "decisionButton",
+      headerName: "Decision",
+      width: 130,
+      disableClickEventBubbling: true,
+      filterable: false,
+      sortable: false,
+      renderCell: (params) => {
+        //console.log(params.row.viewButton);
+        var index = params.row.id;
+
+        const onClick = async () => {
+          setBoardDecision(params.row.decision);
+          setBoardStatus(params.row.status);
+          //setTitleError(false);
+          //setSummaryError(false);
+          //setTagsError(false);
+          //setIssuedByError(false);
+          setDecisionDialog(true);
+        };
+
+        return (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => onClick()}
+            disabled={privilege < 2}
+          >
+            Decision
           </Button>
         );
       },
@@ -1485,7 +1519,6 @@ export default function Dashboard() {
                     }
                   })}
                   meeting={meetings.find((o) => o.number === selectedMeeting)}
-                  
                   ref={(el) => setComponentRef(el)}
                 />
               )}
@@ -1502,6 +1535,119 @@ export default function Dashboard() {
                 )}
                 content={() => componentRef}
               />
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
+            open={decisionDialog}
+            TransitionComponent={Transition}
+            keepMounted
+            onClose={() => setDecisionDialog(false)}
+            aria-labelledby="alert-dialog-slide-title"
+            aria-describedby="alert-dialog-slide-description"
+          >
+            <DialogTitle id="alert-dialog-slide-title">
+              {"Print Meeting Schedule"}
+            </DialogTitle>
+            <DialogContent>
+              <Controller
+                name="boardDecision"
+                as={
+                  <TextField
+                    //error={titleError}
+                    value={boardDecision}
+                    variant="outlined"
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="boardDecision"
+                    label="Decision"
+                    name="boardDecision"
+                    autoComplete="boardDecision"
+                    //helperText={titleError ? "Required" : ""}
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        //setTitleError(true);
+                        setBoardDecision(e.target.value);
+                      } else {
+                        //setTitleError(false);
+                        setBoardDecision(e.target.value);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (title === "") {
+                        //setTitleError(true);
+                      }
+                    }}
+                    autoFocus
+                  />
+                }
+                control={control}
+              />
+
+              <FormControl variant="outlined" fullWidth>
+                <InputLabel id="demo-simple-select-outlined-label">
+                  Status
+                </InputLabel>
+                <Select
+                  labelId="demo-mutiple-chip-label"
+                  id="demo-mutiple-chip"
+                  value={boardStatus}
+                  onChange={(selected) => {
+                    //var newSelectedTags = tags;
+                    //newSelectedTags.push(selected.target.value);
+                    setBoardStatus(selected.target.value);
+                  }}
+                  input={<Input id="select-multiple-chip" />}
+                  MenuProps={MenuProps}
+                >
+                  <MenuItem key={"Finished"} value={"Finished"}>
+                    <ListItemText primary={"Finished"} />
+                  </MenuItem>
+                  <MenuItem key={"Postponed"} value={"Postponed"}>
+                    <ListItemText primary={"Postponed"} />
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setDecisionDialog(false)} color="primary">
+                Close
+              </Button>
+              <Button
+                onClick={() => {
+                  //console.log(selectedTags);
+                  console.log(control.getValues());
+                  setUpdateProgress(true);
+                  axios.create({ baseURL: window.location.origin });
+                  axios
+                    .post("/api/upload_board_decisions/subject-decision", {
+                      decision: control.getValues().boardDecision,
+                      status: boardStatus
+                    })
+                    .then(function (response) {
+                      console.log(response);
+                      setUpdateProgress(false);
+                      setUpdateDialog(false);
+                    })
+                    .catch(function (error) {
+                      console.log(error);
+                      if (error) {
+                        setUpdateProgress(false);
+                        setUpdateDialog(false);
+                        setErrorMessage("An error occured. Please try again.");
+                        setAuthError(true);
+                      }
+                    });
+                }}
+                color="primary"
+                variant="contained"
+              >
+                {!updateProgress && addOrUpdate}
+                {updateProgress && (
+                  <CircularProgress color="secondary" size={20} />
+                )}
+              </Button>
             </DialogActions>
           </Dialog>
 
@@ -2002,7 +2148,7 @@ export default function Dashboard() {
                   {meetings.map(function (meeting) {
                     return (
                       <MenuItem key={meeting.number} value={meeting.number}>
-                        <ListItemText primary={meeting.number} />
+                        <ListItemText primary={meeting.date} />
                       </MenuItem>
                     );
                   })}
@@ -2050,31 +2196,6 @@ export default function Dashboard() {
                     <ListItemText
                       primary={"Development and Innovation Affairs"}
                     />
-                  </MenuItem>
-                </Select>
-              </FormControl>
-
-              <FormControl variant="outlined" fullWidth>
-                <InputLabel id="demo-simple-select-outlined-label">
-                  Status
-                </InputLabel>
-                <Select
-                  labelId="demo-mutiple-chip-label"
-                  id="demo-mutiple-chip"
-                  value={boardStatus}
-                  onChange={(selected) => {
-                    //var newSelectedTags = tags;
-                    //newSelectedTags.push(selected.target.value);
-                    setBoardStatus(selected.target.value);
-                  }}
-                  input={<Input id="select-multiple-chip" />}
-                  MenuProps={MenuProps}
-                >
-                  <MenuItem key={"Finished"} value={"Finished"}>
-                    <ListItemText primary={"Finished"} />
-                  </MenuItem>
-                  <MenuItem key={"Postponed"} value={"Postponed"}>
-                    <ListItemText primary={"Postponed"} />
                   </MenuItem>
                 </Select>
               </FormControl>
