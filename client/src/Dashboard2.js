@@ -46,6 +46,7 @@ import CloseIcon from "@material-ui/icons/Close";
 import GavelIcon from "@material-ui/icons/Gavel";
 import AssignmentIcon from "@material-ui/icons/Assignment";
 import SupervisorAccountIcon from "@material-ui/icons/SupervisorAccount";
+import PrintIcon from "@material-ui/icons/Print";
 import DateFnsUtils from "@date-io/date-fns";
 import {
   MuiPickersUtilsProvider,
@@ -55,6 +56,8 @@ import { ThemeProvider } from "@material-ui/core";
 import { createMuiTheme } from "@material-ui/core/styles";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import { useForm, Controller } from "react-hook-form";
+import Print from "./Print";
+import ReactToPrint from "react-to-print";
 const axios = require("axios");
 
 const light = {
@@ -253,9 +256,11 @@ export default function Dashboard() {
   const [meetingDate, setMeetingDate] = useState(new Date());
   const [meetingNumber, setMeetingNumber] = useState([]);
   const [currentMeeting, setCurrentMeeting] = useState([]);
-  const [selectedMeeting, setSelectedMeeting] = useState([]);
+  const [selectedMeeting, setSelectedMeeting] = useState(-1);
   const [meetingGrid, setMeetingGrid] = useState(false);
   const [meetingViewDialog, setMeetingViewDialog] = useState(false);
+  const [printDialog, setPrintDialog] = useState(false);
+  const [componentRef, setComponentRef] = useState(false);
   const { control } = useForm();
 
   const ITEM_HEIGHT = 48;
@@ -426,7 +431,7 @@ export default function Dashboard() {
 
         const onClick = async () => {
           //console.log("Viewing decision #" + index);
-          var meeting = meetings.find(o => o.number === params.row.number);
+          var meeting = meetings.find((o) => o.number === params.row.number);
           /*
           await axios
             .get("/api/retrieve_decisions/image/" + decision.image, {
@@ -1049,6 +1054,23 @@ export default function Dashboard() {
                 </ListItem>
               )}
 
+              {privilege > 1 && board && (
+                <ListItem
+                  button
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    setPrintDialog(true);
+                  }}
+                >
+                  <ListItemIcon>
+                    <PrintIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Print Report" />
+                </ListItem>
+              )}
+
               {privilege > 1 && !board && (
                 <ListItem
                   button
@@ -1419,6 +1441,71 @@ export default function Dashboard() {
           </Dialog>
 
           <Dialog
+            open={printDialog}
+            TransitionComponent={Transition}
+            keepMounted
+            onClose={() => setPrintDialog(false)}
+            aria-labelledby="alert-dialog-slide-title"
+            aria-describedby="alert-dialog-slide-description"
+          >
+            <DialogTitle id="alert-dialog-slide-title">
+              {"Print Meeting Report"}
+            </DialogTitle>
+            <DialogContent>
+              <FormControl variant="outlined" fullWidth>
+                <InputLabel id="demo-simple-select-outlined-label">
+                  Meeting
+                </InputLabel>
+                <Select
+                  labelId="demo-mutiple-chip-label"
+                  id="demo-mutiple-chip"
+                  value={selectedMeeting}
+                  onChange={(selected) => {
+                    //var newSelectedTags = tags;
+                    //newSelectedTags.push(selected.target.value);
+                    setSelectedMeeting(selected.target.value);
+                  }}
+                  input={<Input id="select-multiple-chip" />}
+                  MenuProps={MenuProps}
+                >
+                  {meetings.map(function (meeting) {
+                    return (
+                      <MenuItem key={meeting.number} value={meeting.number}>
+                        <ListItemText primary={meeting.number} />
+                      </MenuItem>
+                    );
+                  })}
+                </Select>
+              </FormControl>
+              {selectedMeeting != -1 && ready && (
+                <Print
+                  subjects={boardDecisions.map(function (decision) {
+                    if (decision.meeting === selectedMeeting) {
+                      return decision;
+                    }
+                  })}
+                  meeting={meetings.find((o) => o.number === selectedMeeting)}
+                  
+                  ref={(el) => setComponentRef(el)}
+                />
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setPrintDialog(false)} color="primary">
+                Close
+              </Button>
+              <ReactToPrint
+                trigger={() => (
+                  <Button color="primary" variant="contained">
+                    Print
+                  </Button>
+                )}
+                content={() => componentRef}
+              />
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
             fullScreen
             open={viewDialog}
             onClose={() => setViewDialog(false)}
@@ -1571,22 +1658,20 @@ export default function Dashboard() {
                 <ListItemText primary="Date" secondary={currentMeeting.date} />
               </ListItem>
               <Divider />
-              {ready && boardDecisions.map(function (decision) {
-                if (decision.meeting === currentMeeting.number) {
-                  console.log(decision.subject);
-                  return (
-                    <div>
-                      <ListItem button>
-                        <ListItemText
-                          primary={decision.subject}
-                        />
-                      </ListItem>
-                      <Divider />
-                    </div>
-                  );
-                }
-              })}
-              
+              {ready &&
+                boardDecisions.map(function (decision) {
+                  if (decision.meeting === currentMeeting.number) {
+                    console.log(decision.subject);
+                    return (
+                      <div>
+                        <ListItem button>
+                          <ListItemText primary={decision.subject} />
+                        </ListItem>
+                        <Divider />
+                      </div>
+                    );
+                  }
+                })}
             </List>
           </Dialog>
 
