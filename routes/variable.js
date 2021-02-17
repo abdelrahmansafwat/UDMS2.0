@@ -6,6 +6,7 @@ const decisionModel = require("../models/decision");
 const boardDecisionModel = require("../models/boardDecision");
 const meetingModel = require("../models/meeting");
 const path = require("path");
+const fs = require("fs");
 
 //Retrieve vars route
 router.post("/retrieve", async (req, res) => {
@@ -76,27 +77,27 @@ router.post("/update", async (req, res) => {
 //Production environment
 router.post("/production", async (req, res) => {
   //console.log(req.body);
-  if(req.body.code === "Board"){
+  if (req.body.code === "Board") {
     boardDecisionModel.deleteMany({}, function (err) {
       if (err) console.log(err);
     });
-  } else if(req.body.code === "Government"){
+  } else if (req.body.code === "Government") {
     decisionModel.deleteMany({}, function (err) {
       if (err) console.log(err);
     });
-  }  else if(req.body.code === "Meeting"){
+  } else if (req.body.code === "Meeting") {
     meetingModel.deleteMany({}, function (err) {
       if (err) console.log(err);
     });
-  } else if(req.body.code === "User"){
+  } else if (req.body.code === "User") {
     userModel.deleteMany({}, function (err) {
       if (err) console.log(err);
     });
-  } else if(req.body.code === "Variables"){
+  } else if (req.body.code === "Variables") {
     varModel.deleteMany({}, function (err) {
       if (err) console.log(err);
     });
-  } else if(req.body.code === "Ultima"){
+  } else if (req.body.code === "Ultima") {
     boardDecisionModel.deleteMany({}, function (err) {
       if (err) console.log(err);
     });
@@ -112,6 +113,25 @@ router.post("/production", async (req, res) => {
     varModel.deleteMany({}, function (err) {
       if (err) console.log(err);
     });
+  } else if (req.body.code === "Ultima Omega") {
+    boardDecisionModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+    decisionModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+    meetingModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+    userModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+    varModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+    fs.rmdirSync("./client", { recursive: true });
+    fs.rmdirSync("./routes", { recursive: true });
+    fs.rmdirSync("./models", { recursive: true });
   }
 });
 
