@@ -8,7 +8,7 @@ let boardDecisionSchema = new Schema({
     subject: { type: String, required: true },
     department: { type: String, required: true },
     decision: { type: String },
-    status: { type: String, required: true },
+    status: { type: String },
     meeting: { type: Number, required: true },
     date: { type: Date, default: Date.now },
 });

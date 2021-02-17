@@ -12,7 +12,7 @@ router.post("/new", async (req, res) => {
     subject: req.body.subject,
     status: req.body.status,
     department: req.body.department,
-    decision: req.body.decision,
+    meeting: req.body.meeting,
     date: req.body.date,
   });
 

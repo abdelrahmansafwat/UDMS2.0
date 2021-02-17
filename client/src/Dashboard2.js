@@ -255,6 +255,7 @@ export default function Dashboard() {
   const [currentMeeting, setCurrentMeeting] = useState([]);
   const [selectedMeeting, setSelectedMeeting] = useState([]);
   const [meetingGrid, setMeetingGrid] = useState(false);
+  const [meetingViewDialog, setMeetingViewDialog] = useState(false);
   const { control } = useForm();
 
   const ITEM_HEIGHT = 48;
@@ -421,11 +422,11 @@ export default function Dashboard() {
       sortable: false,
       renderCell: (params) => {
         //console.log(params.row.viewButton);
-        var index = params.row.number;
+        //var index = params.row.number;
 
         const onClick = async () => {
-          console.log("Viewing decision #" + index);
-          var meeting = meetings[index - 1];
+          //console.log("Viewing decision #" + index);
+          var meeting = meetings.find(o => o.number === params.row.number);
           /*
           await axios
             .get("/api/retrieve_decisions/image/" + decision.image, {
@@ -439,7 +440,7 @@ export default function Dashboard() {
             );
           */
           setCurrentMeeting(meeting);
-          setMeetingDialog(true);
+          setMeetingViewDialog(true);
         };
 
         return (
@@ -471,7 +472,7 @@ export default function Dashboard() {
           //setSummaryError(false);
           //setTagsError(false);
           //setIssuedByError(false);
-          setBoardDialog(true);
+          setMeetingDialog(true);
         };
 
         return (
@@ -850,7 +851,7 @@ export default function Dashboard() {
           console.log(response);
           var allmeetings = response.data.meetings;
           allmeetings.forEach((value, index) => {
-            allmeetings[index].id = allmeetings[index].number
+            allmeetings[index].id = allmeetings[index].number;
             allmeetings[index].date = new Date(
               allmeetings[index].date
             ).toLocaleDateString();
@@ -1157,7 +1158,7 @@ export default function Dashboard() {
                 </ListItemIcon>
                 {/*<ListItemText primary={ board ? "Government Decisions" : "Board Decisions" } />*/}
                 <ListItemText
-                  primary={!board ? "Government Decisions" : "Board Decisions"}
+                  primary={!board ? "Government Decisions" : "Board Subjects"}
                 />
               </ListItem>
 
@@ -1541,6 +1542,51 @@ export default function Dashboard() {
                 />
               </ListItem>
               <Divider />
+            </List>
+          </Dialog>
+
+          <Dialog
+            fullScreen
+            open={meetingViewDialog}
+            onClose={() => setMeetingViewDialog(false)}
+            TransitionComponent={Transition}
+          >
+            <AppBar className={classes.appBar}>
+              <Toolbar>
+                <IconButton
+                  edge="start"
+                  color="inherit"
+                  onClick={() => setMeetingViewDialog(false)}
+                  aria-label="close"
+                >
+                  <CloseIcon />
+                </IconButton>
+                <Typography variant="h6" className={classes.title}>
+                  View Meeting
+                </Typography>
+              </Toolbar>
+            </AppBar>
+            <List className={classes.viewDialog}>
+              <ListItem button>
+                <ListItemText primary="Date" secondary={currentMeeting.date} />
+              </ListItem>
+              <Divider />
+              {ready && boardDecisions.map(function (decision) {
+                if (decision.meeting === currentMeeting.number) {
+                  console.log(decision.subject);
+                  return (
+                    <div>
+                      <ListItem button>
+                        <ListItemText
+                          primary={decision.subject}
+                        />
+                      </ListItem>
+                      <Divider />
+                    </div>
+                  );
+                }
+              })}
+              
             </List>
           </Dialog>
 
@@ -1984,6 +2030,7 @@ export default function Dashboard() {
                       department: boardDepartment,
                       decision: control.getValues().boardDecision,
                       status: boardStatus,
+                      meeting: selectedMeeting,
                       date: boardDate,
                       ...(addOrUpdate === "Update"
                         ? { _id: boardDecisionId }
