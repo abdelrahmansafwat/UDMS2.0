@@ -57,7 +57,7 @@ import { createMuiTheme } from "@material-ui/core/styles";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import { useForm, Controller } from "react-hook-form";
 import Print from "./Print";
-import ReactToPrint from "react-to-print";
+import { PDFDownloadLink } from "@react-pdf/renderer";
 const axios = require("axios");
 
 const light = {
@@ -1101,7 +1101,7 @@ export default function Dashboard() {
                   <ListItemIcon>
                     <PrintIcon />
                   </ListItemIcon>
-                  <ListItemText primary="Print Schedule" />
+                  <ListItemText primary="Generate Schedule" />
                 </ListItem>
               )}
 
@@ -1402,7 +1402,7 @@ export default function Dashboard() {
               </Grid>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setVarsDialog(false)} color="primary">
+              <Button onClick={() => setVarsDialog(false)} color="primary" variant="contained">
                 Close
               </Button>
             </DialogActions>
@@ -1437,7 +1437,7 @@ export default function Dashboard() {
               </MuiPickersUtilsProvider>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setMeetingDialog(false)} color="primary">
+              <Button onClick={() => setMeetingDialog(false)} variant="contained">
                 Close
               </Button>
               <Button
@@ -1511,31 +1511,41 @@ export default function Dashboard() {
                   })}
                 </Select>
               </FormControl>
-              {selectedMeeting != -1 && ready && (
-                <Print
-                  subjects={boardDecisions.map(function (decision) {
-                    if (decision.meeting === selectedMeeting) {
-                      return decision;
-                    }
-                  })}
-                  meeting={meetings.find((o) => o.number === selectedMeeting)}
-                  ref={(el) => setComponentRef(el)}
-                />
-              )}
             </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setPrintDialog(false)} color="primary">
+            {ready && <DialogActions>
+              <Button onClick={() => setPrintDialog(false)} variant="contained">
                 Close
               </Button>
-              <ReactToPrint
-                trigger={() => (
-                  <Button color="primary" variant="contained">
-                    Print
-                  </Button>
-                )}
-                content={() => componentRef}
-              />
-            </DialogActions>
+              {selectedMeeting != -1 && ready && (
+                <PDFDownloadLink
+                  document={
+                    <Print
+                      subjects={boardDecisions.map(function (decision) {
+                        if (decision.meeting === selectedMeeting) {
+                          return decision;
+                        }
+                      })}
+                      meeting={meetings.find(
+                        (o) => o.number === selectedMeeting
+                      )}
+                    />
+                  }
+                  fileName={"(" + selectedMeeting + ") " + "جلسة رقم" + ".pdf"}
+                >
+                  {({ blob, url, loading, error }) =>
+                    loading ? (
+                      <Button color="primary" variant="contained">
+                        <CircularProgress color="secondary" size={20} />
+                      </Button>
+                    ) : (
+                      <Button color="primary" variant="contained">
+                        Generate
+                      </Button>
+                    )
+                  }
+                </PDFDownloadLink>
+              )}
+            </DialogActions>}
           </Dialog>
 
           <Dialog
@@ -1547,7 +1557,7 @@ export default function Dashboard() {
             aria-describedby="alert-dialog-slide-description"
           >
             <DialogTitle id="alert-dialog-slide-title">
-              {"Print Meeting Schedule"}
+              {"Generate Meeting Schedule"}
             </DialogTitle>
             <DialogContent>
               <Controller
@@ -1623,7 +1633,7 @@ export default function Dashboard() {
                   axios
                     .post("/api/upload_board_decisions/subject-decision", {
                       decision: control.getValues().boardDecision,
-                      status: boardStatus
+                      status: boardStatus,
                     })
                     .then(function (response) {
                       console.log(response);
@@ -2172,29 +2182,29 @@ export default function Dashboard() {
                   MenuProps={MenuProps}
                 >
                   <MenuItem
-                    key={"Managerial Affairs"}
-                    value={"Managerial Affairs"}
+                    key={"الشئون الادارية"}
+                    value={"الشئون الادارية"}
                   >
-                    <ListItemText primary={"Managerial Affairs"} />
+                    <ListItemText primary={"الشئون الادارية"} />
                   </MenuItem>
                   <MenuItem
-                    key={"Education and Student Affairs"}
-                    value={"Education and Student Affairs"}
+                    key={"شئون التعليم والطلاب"}
+                    value={"شئون التعليم والطلاب"}
                   >
-                    <ListItemText primary={"Education and Student Affairs"} />
+                    <ListItemText primary={"شئون التعليم والطلاب"} />
                   </MenuItem>
                   <MenuItem
-                    key={"Postgraduate Affairs"}
-                    value={"Postgraduate Affairs"}
+                    key={"شئون الدراسات العليا"}
+                    value={"شئون الدراسات العليا"}
                   >
-                    <ListItemText primary={"Postgraduate Affairs"} />
+                    <ListItemText primary={"شئون الدراسات العليا"} />
                   </MenuItem>
                   <MenuItem
-                    key={"Development and Innovation Affairs"}
-                    value={"Development and Innovation Affairs"}
+                    key={"شئون التنمية والابتكار"}
+                    value={"شئون التنمية والابتكار"}
                   >
                     <ListItemText
-                      primary={"Development and Innovation Affairs"}
+                      primary={"شئون التنمية والابتكار"}
                     />
                   </MenuItem>
                 </Select>

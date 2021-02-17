@@ -10,7 +10,6 @@ router.post("/new", async (req, res) => {
 
   let newDecision = new boardDecisionModel({
     subject: req.body.subject,
-    status: req.body.status,
     department: req.body.department,
     meeting: req.body.meeting,
     date: req.body.date,
@@ -60,9 +59,8 @@ router.post("/update", async (req, res) => {
     {
       subject: req.body.subject,
       department: req.body.department,
-      decision: req.body.decision,
-      status: req.body.status,
       date: req.body.date,
+      meeting: req.body.meeting
     },
     { new: true },
     (err, data) => {
