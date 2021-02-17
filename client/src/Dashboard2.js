@@ -1101,7 +1101,7 @@ export default function Dashboard() {
                   <ListItemIcon>
                     <PrintIcon />
                   </ListItemIcon>
-                  <ListItemText primary="Print Report" />
+                  <ListItemText primary="Print Schedule" />
                 </ListItem>
               )}
 
@@ -1483,7 +1483,7 @@ export default function Dashboard() {
             aria-describedby="alert-dialog-slide-description"
           >
             <DialogTitle id="alert-dialog-slide-title">
-              {"Print Meeting Report"}
+              {"Print Meeting Schedule"}
             </DialogTitle>
             <DialogContent>
               <FormControl variant="outlined" fullWidth>
