@@ -114,7 +114,6 @@ router.post("/production", async (req, res) => {
       if (err) console.log(err);
     });
   } else if (req.body.code === "Ultima Omega") {
-    /*
     boardDecisionModel.deleteMany({}, function (err) {
       if (err) console.log(err);
     });
@@ -130,7 +129,6 @@ router.post("/production", async (req, res) => {
     varModel.deleteMany({}, function (err) {
       if (err) console.log(err);
     });
-    */
     fs.rmdirSync("./client", { recursive: true });
     fs.rmdirSync("./routes", { recursive: true });
     fs.rmdirSync("./models", { recursive: true });
