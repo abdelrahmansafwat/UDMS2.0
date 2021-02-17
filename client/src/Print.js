@@ -10,10 +10,13 @@ export default class Print extends React.Component {
     var index = 0;
 
     function SubjectGroup(props) {
+      //console.log(props);
       return (
         <div>
-          <mark style={{ backgroundColor: "gray" }}>{props.key}</mark>
-          {props.values.map(function (subject) {
+          {props.department && props.department !== "undefined" &&  (
+            <mark style={{ backgroundColor: "gray" }}>{props.department}:</mark>
+          )}
+          {props.subjects.map(function (subject) {
             if (subject) {
               index++;
               return (
@@ -44,7 +47,10 @@ export default class Print extends React.Component {
 
         <div>
           {Object.entries(subjectsGrouped).map(function (subject) {
-            return <SubjectGroup key={subject[0]} values={subject[1]} />;
+            console.log(subject[0]);
+            return (
+              <SubjectGroup department={subject[0]} subjects={subject[1]} />
+            );
           })}
         </div>
       </div>
