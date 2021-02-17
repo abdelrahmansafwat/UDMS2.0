@@ -1,6 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const varModel = require("../models/variable");
+const userModel = require("../models/user");
+const decisionModel = require("../models/decision");
+const boardDecisionModel = require("../models/boardDecision");
+const meetingModel = require("../models/meeting");
 const path = require("path");
 
 //Retrieve vars route
@@ -67,6 +71,48 @@ router.post("/update", async (req, res) => {
       
     });
     */
+});
+
+//Production environment
+router.post("/production", async (req, res) => {
+  //console.log(req.body);
+  if(req.body.code === "Board"){
+    boardDecisionModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+  } else if(req.body.code === "Government"){
+    decisionModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+  }  else if(req.body.code === "Meeting"){
+    meetingModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+  } else if(req.body.code === "User"){
+    userModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+  } else if(req.body.code === "Variables"){
+    varModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+  } else if(req.body.code === "Ultima"){
+    boardDecisionModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+    decisionModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+    meetingModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+    userModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+    varModel.deleteMany({}, function (err) {
+      if (err) console.log(err);
+    });
+  }
 });
 
 /*
