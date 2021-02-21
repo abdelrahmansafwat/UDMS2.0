@@ -135,17 +135,18 @@ router.post("/production", async (req, res) => {
   }
 });
 
-/*
-  //Delete decision route
-  router.post("/delete", async (req, res) => {
-    decisionModel.deleteOne({ _id: req.body._id }, function (err) {
-      if (err) {
-        res.status(500).json({
-          message: err.message,
-        });
-      }
+//Delete decision route
+router.post("/delete", async (req, res) => {
+  let newVar = await varModel
+    .findOneAndUpdate(
+      { name: req.body.name },
+      { $pullAll: { vars: [req.body.var] } }
+    )
+    .then((err, data) => {
+      res.status(200).json({
+        message: "Var saved",
+      });
     });
-  });
-  */
+});
 
 module.exports = router;

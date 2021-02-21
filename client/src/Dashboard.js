@@ -45,6 +45,7 @@ import history from "./history";
 import CloseIcon from "@material-ui/icons/Close";
 import GavelIcon from "@material-ui/icons/Gavel";
 import SupervisorAccountIcon from "@material-ui/icons/SupervisorAccount";
+import RemoveCircleIcon from "@material-ui/icons/RemoveCircle";
 import DateFnsUtils from "@date-io/date-fns";
 import {
   MuiPickersUtilsProvider,
@@ -247,6 +248,8 @@ export default function Dashboard() {
   const [currentBoardDecision, setCurrentBoardDecision] = useState([]);
   const [boardDecisionId, setBoardDecisionId] = useState("");
   const [boardViewDialog, setBoardViewDialog] = useState(false);
+  const [selectedRemoveTagOrIssuer, setSelectedRemoveTagOrIssuer] = useState("");
+  const [varsDeleteDialog, setVarsDeleteDialog] = useState(false);
   const { control } = useForm();
 
   const ITEM_HEIGHT = 48;
@@ -884,9 +887,25 @@ export default function Dashboard() {
                   }}
                 >
                   <ListItemIcon>
-                    <LocalOfferIcon />
+                    <AddCircleIcon />
                   </ListItemIcon>
                   <ListItemText primary="Add Tags/Issuers" />
+                </ListItem>
+              )}
+
+              {privilege > 1 && !board && (
+                <ListItem
+                  button
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setVarsDeleteDialog(true);
+                  }}
+                >
+                  <ListItemIcon>
+                    <RemoveCircleIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Remove Tags/Issuers" />
                 </ListItem>
               )}
             </div>
@@ -956,7 +975,9 @@ export default function Dashboard() {
                   <GavelIcon />
                 </ListItemIcon>
                 {/*<ListItemText primary={ board ? "Government Decisions" : "Board Decisions" } />*/}
-                <ListItemText primary={ !board ? "Government Decisions" : "Board Decisions" } />
+                <ListItemText
+                  primary={!board ? "Government Decisions" : "Board Decisions"}
+                />
               </ListItem>
               <ListItem
                 button
@@ -1063,7 +1084,7 @@ export default function Dashboard() {
                     control={control}
                   />
                 </Grid>
-                <Grid item xs={3}>
+                <Grid item xs={6}>
                   <FormControl variant="outlined" fullWidth>
                     <Select
                       labelId="demo-mutiple-chip-label"
@@ -1086,8 +1107,14 @@ export default function Dashboard() {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={3}>
-                  <Button
+                
+              </Grid>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setVarsDialog(false)} variant="contained">
+                Close
+              </Button>
+              <Button
                     variant="contained"
                     color="primary"
                     component="span"
@@ -1120,6 +1147,7 @@ export default function Dashboard() {
                             setErrorMessage(
                               "An error occured. Please try again."
                             );
+                            setVarsDialog(false);
                             setAuthError(true);
                           }
                         });
@@ -1127,13 +1155,135 @@ export default function Dashboard() {
                   >
                     Submit
                   </Button>
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
+            open={varsDeleteDialog}
+            TransitionComponent={Transition}
+            keepMounted
+            onClose={() => setVarsDeleteDialog(false)}
+            aria-labelledby="alert-dialog-slide-title"
+            aria-describedby="alert-dialog-slide-description"
+          >
+            <DialogTitle id="alert-dialog-slide-title">
+              {"Remove Tags or Issuers"}
+            </DialogTitle>
+            <DialogContent>
+              <Grid
+                container
+                direction={"column"}
+                spacing={1}
+                className={classes.dflex}
+              >
+                <Grid item xs={6}>
+                  <FormControl variant="outlined" fullWidth>
+                    <Select
+                      labelId="demo-mutiple-chip-label"
+                      id="demo-mutiple-chip"
+                      value={selectedRemoveTagOrIssuer}
+                      onChange={(selected) => {
+                        //var newSelectedTags = tags;
+                        //newSelectedTags.push(selected.target.value);
+                        setSelectedRemoveTagOrIssuer(selected.target.value);
+                      }}
+                      input={<Input id="select-multiple-chip" />}
+                      MenuProps={MenuProps}
+                    >
+                      {selectedNewTagOrIssuer === "Tag" && tags.map(function (tag) {
+                        return (
+                          <MenuItem key={tag} value={tag}>
+                            <ListItemText primary={tag} />
+                          </MenuItem>
+                        );
+                      })}
+
+                      {selectedNewTagOrIssuer === "Issuer" && issuers.map(function (issuer) {
+                        return (
+                          <MenuItem key={issuer} value={issuer}>
+                            <ListItemText primary={issuer} />
+                          </MenuItem>
+                        );
+                      })}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={6}>
+                  <FormControl variant="outlined" fullWidth>
+                    <Select
+                      labelId="demo-mutiple-chip-label"
+                      id="demo-mutiple-chip"
+                      value={selectedNewTagOrIssuer}
+                      onChange={(selected) => {
+                        //var newSelectedTags = tags;
+                        //newSelectedTags.push(selected.target.value);
+                        setSelectedNewTagOrIssuer(selected.target.value);
+                      }}
+                      input={<Input id="select-multiple-chip" />}
+                      MenuProps={MenuProps}
+                    >
+                      <MenuItem key={"Tag"} value={"Tag"}>
+                        <ListItemText primary={"Tag"} />
+                      </MenuItem>
+                      <MenuItem key={"Issuer"} value={"Issuer"}>
+                        <ListItemText primary={"Issuer"} />
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
                 </Grid>
               </Grid>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setVarsDialog(false)} color="primary">
+              <Button onClick={() => setVarsDeleteDialog(false)} variant="contained">
                 Close
               </Button>
+              <Button
+                    variant="contained"
+                    color="secondary"
+                    component="span"
+                    fullWidth
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      axios.create({ baseURL: window.location.origin });
+                      axios
+                        .post("/api/var/delete", {
+                          name: selectedNewTagOrIssuer.toLowerCase() + "s",
+                          var: selectedRemoveTagOrIssuer,
+                        })
+                        .then(function (response) {
+                          //console.log(newTagOrIssuer);
+                          setVarsDeleteDialog(false);
+                          if (selectedNewTagOrIssuer === "Tag") {
+                            var oldTags = tags;
+                            const index = oldTags.indexOf(
+                              selectedRemoveTagOrIssuer
+                            );
+                            oldTags.splice(index, 1);
+                            setTags(oldTags);
+                          } else {
+                            var oldIssuers = issuers;
+                            const index = oldIssuers.indexOf(
+                              selectedRemoveTagOrIssuer
+                            );
+                            oldIssuers.splice(index, 1);
+                            setIssuers(oldIssuers);
+                          }
+                        })
+                        .catch(function (error) {
+                          console.log(error);
+                          if (error) {
+                            setErrorMessage(
+                              "An error occured. Please try again."
+                            );
+                            setVarsDeleteDialog(false);
+                            setAuthError(true);
+                          }
+                        });
+                    }}
+                  >
+                    Remove
+                  </Button>
             </DialogActions>
           </Dialog>
 
