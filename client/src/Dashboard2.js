@@ -262,6 +262,7 @@ export default function Dashboard() {
   const [printDialog, setPrintDialog] = useState(false);
   const [componentRef, setComponentRef] = useState(null);
   const [decisionDialog, setDecisionDialog] = useState(false);
+  const [refresh, setRefresh] = useState(false);
   const { control } = useForm();
 
   const ITEM_HEIGHT = 48;
@@ -411,7 +412,6 @@ export default function Dashboard() {
         var index = params.row.id;
 
         const onClick = async () => {
-          console.log("Viewing decision #" + index);
           var decision = boardDecisions[index - 1];
           var alldecisions = boardDecisions;
           axios
@@ -551,6 +551,7 @@ export default function Dashboard() {
               allmeetings.splice(index - 1, 1);
               console.log(allmeetings.length);
               setMeetings(allmeetings);
+              setRefresh(!refresh);
               //history.push("/dashboard");
             })
             .catch(function (error) {
