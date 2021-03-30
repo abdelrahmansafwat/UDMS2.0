@@ -2,15 +2,41 @@ const express = require("express");
 const router = express.Router();
 const boardDecisionModel = require("../models/boardDecision");
 const meetingModel = require("../models/meeting");
+const aws = require("aws-sdk");
+const multer = require("multer");
+const multerS3 = require("multer-s3");
 const path = require("path");
 
+aws.config.update({
+  secretAccessKey: process.env.S3_ACCESS_SECRET,
+  accessKeyId: process.env.S3_ACCESS_KEY,
+  region: "eu-central-1",
+});
+
+const s3 = new aws.S3();
+
+var storage = multerS3({
+  acl: "public-read",
+  s3,
+  bucket: "govdas",
+  metadata: function (req, file, cb) {
+    cb(null, { fieldName: "TESTING_METADATA" });
+  },
+  key: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+
+var uploadDisk = multer({ storage: storage });
+
 //New decision route
-router.post("/new", async (req, res) => {
+router.post("/new", uploadDisk.single("file"), async (req, res) => {
   console.log(req.body);
 
   let newDecision = new boardDecisionModel({
     subject: req.body.subject,
     department: req.body.department,
+    image: req.file.originalname,
     meeting: req.body.meeting,
     date: req.body.date,
   });
@@ -104,9 +130,8 @@ router.post("/update-meeting", async (req, res) => {
 
 //Update meeting route
 router.post("/subject-decision", async (req, res) => {
-  console.log(req);
-
-
+  console.log(req.body);
+  
   let newDecision = await boardDecisionModel.findOneAndUpdate(
     { _id: req.body._id },
     {
@@ -136,6 +161,11 @@ router.post("/delete", async (req, res) => {
         message: err.message,
       });
     }
+    else {
+      res.status(200).json({
+        message: "Deleted",
+      });
+    }
   });
 });
 
@@ -145,6 +175,11 @@ router.post("/delete-meeting", async (req, res) => {
     if (err) {
       res.status(500).json({
         message: err.message,
+      });
+    }
+    else {
+      res.status(200).json({
+        message: "Deleted",
       });
     }
   });

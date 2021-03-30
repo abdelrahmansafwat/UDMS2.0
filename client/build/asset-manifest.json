@@ -1,19 +1,20 @@
 {
   "files": {
-    "main.js": "/static/js/main.75bcdf10.chunk.js",
-    "main.js.map": "/static/js/main.75bcdf10.chunk.js.map",
+    "main.js": "/static/js/main.4582feaf.chunk.js",
+    "main.js.map": "/static/js/main.4582feaf.chunk.js.map",
     "runtime-main.js": "/static/js/runtime-main.c60b04c7.js",
     "runtime-main.js.map": "/static/js/runtime-main.c60b04c7.js.map",
-    "static/js/2.04e78826.chunk.js": "/static/js/2.04e78826.chunk.js",
-    "static/js/2.04e78826.chunk.js.map": "/static/js/2.04e78826.chunk.js.map",
+    "static/js/2.0e5d87a4.chunk.js": "/static/js/2.0e5d87a4.chunk.js",
+    "static/js/2.0e5d87a4.chunk.js.map": "/static/js/2.0e5d87a4.chunk.js.map",
     "index.html": "/index.html",
-    "static/js/2.04e78826.chunk.js.LICENSE.txt": "/static/js/2.04e78826.chunk.js.LICENSE.txt",
+    "static/js/2.0e5d87a4.chunk.js.LICENSE.txt": "/static/js/2.0e5d87a4.chunk.js.LICENSE.txt",
     "static/media/Tajawal-Regular.2a157b78.ttf": "/static/media/Tajawal-Regular.2a157b78.ttf",
+    "static/media/Times New Roman.f4e3a464.ttf": "/static/media/Times New Roman.f4e3a464.ttf",
     "static/media/eelu.bd71fc3b.png": "/static/media/eelu.bd71fc3b.png"
   },
   "entrypoints": [
     "static/js/runtime-main.c60b04c7.js",
-    "static/js/2.04e78826.chunk.js",
-    "static/js/main.75bcdf10.chunk.js"
+    "static/js/2.0e5d87a4.chunk.js",
+    "static/js/main.4582feaf.chunk.js"
   ]
 }

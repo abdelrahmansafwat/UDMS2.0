@@ -31,6 +31,7 @@ import DialogContentText from "@material-ui/core/DialogContentText";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import Button from "@material-ui/core/Button";
 import TextField from "@material-ui/core/TextField";
+import TextareaAutosize from '@material-ui/core/TextareaAutosize';
 import Slide from "@material-ui/core/Slide";
 import Grid from "@material-ui/core/Grid";
 import RefreshIcon from "@material-ui/icons/Refresh";
@@ -57,6 +58,7 @@ import { createMuiTheme } from "@material-ui/core/styles";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import { useForm, Controller } from "react-hook-form";
 import Print from "./Print";
+import Print2 from "./Print2";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 const axios = require("axios");
 
@@ -263,6 +265,7 @@ export default function Dashboard() {
   const [componentRef, setComponentRef] = useState(null);
   const [decisionDialog, setDecisionDialog] = useState(false);
   const [refresh, setRefresh] = useState(false);
+  const [printReportDialog, setReportPrintDialog] = useState(false);
   const { control } = useForm();
 
   const ITEM_HEIGHT = 48;
@@ -315,6 +318,8 @@ export default function Dashboard() {
                   Buffer.from(response.data, "binary").toString("base64"))
             );
           */
+          decision.imageBase64 =
+            "https://govdas.s3.eu-central-1.amazonaws.com/" + decision.image;
           setCurrentBoardDecision(decision);
           setBoardViewDialog(true);
         };
@@ -342,7 +347,9 @@ export default function Dashboard() {
         var index = params.row.id;
 
         const onClick = async () => {
+          var decision = boardDecisions[index - 1];
           setBoardDecision(params.row.decision);
+          setCurrentBoardDecision(decision);
           setBoardStatus(params.row.status);
           //setTitleError(false);
           //setSummaryError(false);
@@ -424,6 +431,8 @@ export default function Dashboard() {
               alldecisions.splice(index - 1, 1);
               console.log(alldecisions.length);
               setBoardDecisions(alldecisions);
+              setRefresh(!refresh);
+              getAllBoardDecisions();
               //history.push("/dashboard");
             })
             .catch(function (error) {
@@ -1105,6 +1114,22 @@ export default function Dashboard() {
                   <ListItemText primary="Generate Schedule" />
                 </ListItem>
               )}
+              {privilege > 1 && board && (
+                <ListItem
+                  button
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    setReportPrintDialog(true);
+                  }}
+                >
+                  <ListItemIcon>
+                    <PrintIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Generate Report" />
+                </ListItem>
+              )}
 
               {privilege > 1 && !board && (
                 <ListItem
@@ -1403,7 +1428,11 @@ export default function Dashboard() {
               </Grid>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setVarsDialog(false)} color="primary" variant="contained">
+              <Button
+                onClick={() => setVarsDialog(false)}
+                color="primary"
+                variant="contained"
+              >
                 Close
               </Button>
             </DialogActions>
@@ -1438,7 +1467,10 @@ export default function Dashboard() {
               </MuiPickersUtilsProvider>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setMeetingDialog(false)} variant="contained">
+              <Button
+                onClick={() => setMeetingDialog(false)}
+                variant="contained"
+              >
                 Close
               </Button>
               <Button
@@ -1513,40 +1545,128 @@ export default function Dashboard() {
                 </Select>
               </FormControl>
             </DialogContent>
-            {ready && <DialogActions>
-              <Button onClick={() => setPrintDialog(false)} variant="contained">
-                Close
-              </Button>
-              {selectedMeeting != -1 && ready && (
-                <PDFDownloadLink
-                  document={
-                    <Print
-                      subjects={boardDecisions.map(function (decision) {
-                        if (decision.meeting === selectedMeeting) {
-                          return decision;
-                        }
-                      })}
-                      meeting={meetings.find(
-                        (o) => o.number === selectedMeeting
-                      )}
-                    />
-                  }
-                  fileName={"(" + selectedMeeting + ") " + "جلسة رقم" + ".pdf"}
+            {ready && (
+              <DialogActions>
+                <Button
+                  onClick={() => setPrintDialog(false)}
+                  variant="contained"
                 >
-                  {({ blob, url, loading, error }) =>
-                    loading ? (
-                      <Button color="primary" variant="contained">
-                        <CircularProgress color="secondary" size={20} />
-                      </Button>
-                    ) : (
-                      <Button color="primary" variant="contained">
-                        Generate
-                      </Button>
-                    )
-                  }
-                </PDFDownloadLink>
-              )}
-            </DialogActions>}
+                  Close
+                </Button>
+                {selectedMeeting != -1 && ready && (
+                  <PDFDownloadLink
+                    document={
+                      <Print
+                        subjects={boardDecisions.map(function (decision) {
+                          if (decision.meeting === selectedMeeting) {
+                            return decision;
+                          }
+                        })}
+                        meeting={meetings.find(
+                          (o) => o.number === selectedMeeting
+                        )}
+                      />
+                    }
+                    fileName={
+                      "(" + selectedMeeting + ") " + "جلسة رقم" + ".pdf"
+                    }
+                  >
+                    {({ blob, url, loading, error }) =>
+                      loading ? (
+                        <Button color="primary" variant="contained">
+                          <CircularProgress color="secondary" size={20} />
+                        </Button>
+                      ) : (
+                        <Button color="primary" variant="contained">
+                          Generate
+                        </Button>
+                      )
+                    }
+                  </PDFDownloadLink>
+                )}
+              </DialogActions>
+            )}
+          </Dialog>
+
+          <Dialog
+            open={printReportDialog}
+            TransitionComponent={Transition}
+            keepMounted
+            onClose={() => setReportPrintDialog(false)}
+            aria-labelledby="alert-dialog-slide-title"
+            aria-describedby="alert-dialog-slide-description"
+          >
+            <DialogTitle id="alert-dialog-slide-title">
+              {"Print Post-Meeting Report"}
+            </DialogTitle>
+            <DialogContent>
+              <FormControl variant="outlined" fullWidth>
+                <InputLabel id="demo-simple-select-outlined-label">
+                  Meeting
+                </InputLabel>
+                <Select
+                  labelId="demo-mutiple-chip-label"
+                  id="demo-mutiple-chip"
+                  value={selectedMeeting}
+                  onChange={(selected) => {
+                    //var newSelectedTags = tags;
+                    //newSelectedTags.push(selected.target.value);
+                    setSelectedMeeting(selected.target.value);
+                  }}
+                  input={<Input id="select-multiple-chip" />}
+                  MenuProps={MenuProps}
+                >
+                  {meetings.map(function (meeting) {
+                    return (
+                      <MenuItem key={meeting.number} value={meeting.number}>
+                        <ListItemText primary={meeting.number} />
+                      </MenuItem>
+                    );
+                  })}
+                </Select>
+              </FormControl>
+            </DialogContent>
+            {ready && (
+              <DialogActions>
+                <Button
+                  onClick={() => setReportPrintDialog(false)}
+                  variant="contained"
+                >
+                  Close
+                </Button>
+                {selectedMeeting != -1 && ready && (
+                  <PDFDownloadLink
+                    document={
+                      <Print2
+                        subjects={boardDecisions.map(function (decision) {
+                          if (decision.meeting === selectedMeeting) {
+                            return decision;
+                          }
+                        })}
+                        meeting={meetings.find(
+                          (o) => o.number === selectedMeeting
+                        )}
+                      />
+                    }
+                    fileName={
+                      "(" + selectedMeeting + ") " + "محضر جلسة رقم" + ".pdf"
+                    }
+                  >
+                    {({ blob, url, loading, error }) =>
+                      loading ? (
+                        <Button color="primary" variant="contained">
+                          <CircularProgress color="secondary" size={20} />
+                        </Button>
+                      ) : (
+                        <Button color="primary" variant="contained">
+                          Generate
+                        </Button>
+                      )
+                    }
+                  </PDFDownloadLink>
+                )}
+              </DialogActions>
+            )}
           </Dialog>
 
           <Dialog
@@ -1558,7 +1678,7 @@ export default function Dashboard() {
             aria-describedby="alert-dialog-slide-description"
           >
             <DialogTitle id="alert-dialog-slide-title">
-              {"Generate Meeting Schedule"}
+              {"Add/Update Decision"}
             </DialogTitle>
             <DialogContent>
               <Controller
@@ -1571,6 +1691,8 @@ export default function Dashboard() {
                     margin="normal"
                     required
                     fullWidth
+                    multiline
+                    rowsMax={Infinity}
                     id="boardDecision"
                     label="Decision"
                     name="boardDecision"
@@ -1635,17 +1757,19 @@ export default function Dashboard() {
                     .post("/api/upload_board_decisions/subject-decision", {
                       decision: control.getValues().boardDecision,
                       status: boardStatus,
+                      _id: currentBoardDecision._id
                     })
                     .then(function (response) {
                       console.log(response);
                       setUpdateProgress(false);
-                      setUpdateDialog(false);
+                      setDecisionDialog(false);
+                      getAllBoardDecisions();
                     })
                     .catch(function (error) {
                       console.log(error);
                       if (error) {
                         setUpdateProgress(false);
-                        setUpdateDialog(false);
+                        setDecisionDialog(false);
                         setErrorMessage("An error occured. Please try again.");
                         setAuthError(true);
                       }
@@ -1684,7 +1808,7 @@ export default function Dashboard() {
               </Toolbar>
             </AppBar>
             <List className={classes.viewDialog}>
-              <img alt="decision" src={currentDecision.imageBase64} />
+              { currentDecision.imageBase64 !== "https://govdas.s3.eu-central-1.amazonaws.com/" && <img alt="decision" src={currentDecision.imageBase64} />}
               <ListItem button>
                 <ListItemText
                   primary="Title"
@@ -1751,6 +1875,7 @@ export default function Dashboard() {
               </Toolbar>
             </AppBar>
             <List className={classes.viewDialog}>
+              <img alt="decision" src={currentBoardDecision.imageBase64} />
               <ListItem button>
                 <ListItemText
                   primary="Subject"
@@ -2115,6 +2240,8 @@ export default function Dashboard() {
                     margin="normal"
                     required
                     fullWidth
+                    multiline
+                    rowsMax={Infinity}
                     id="boardSubject"
                     label="Subject"
                     name="boardSubject"
@@ -2182,10 +2309,7 @@ export default function Dashboard() {
                   input={<Input id="select-multiple-chip" />}
                   MenuProps={MenuProps}
                 >
-                  <MenuItem
-                    key={"الشئون الادارية"}
-                    value={"الشئون الادارية"}
-                  >
+                  <MenuItem key={"الشئون الادارية"} value={"الشئون الادارية"}>
                     <ListItemText primary={"الشئون الادارية"} />
                   </MenuItem>
                   <MenuItem
@@ -2204,9 +2328,7 @@ export default function Dashboard() {
                     key={"شئون التنمية والابتكار"}
                     value={"شئون التنمية والابتكار"}
                   >
-                    <ListItemText
-                      primary={"شئون التنمية والابتكار"}
-                    />
+                    <ListItemText primary={"شئون التنمية والابتكار"} />
                   </MenuItem>
                 </Select>
               </FormControl>
@@ -2226,6 +2348,58 @@ export default function Dashboard() {
                   }}
                 />
               </MuiPickersUtilsProvider>
+              <Grid
+                container
+                direction={"column"}
+                spacing={1}
+                className={classes.dflex}
+              >
+                <Grid item xs={9}>
+                  <TextField
+                    error={imageError}
+                    value={imageName}
+                    variant="outlined"
+                    margin="normal"
+                    required
+                    fullWidth
+                    disabled
+                    id="image"
+                    label="Image"
+                    name="image"
+                    helperText={imageError ? "Required" : ""}
+                    onChange={(e) => {
+                      if (e.target.value === "") {
+                        setImageError(true);
+                      } else {
+                        setImageError(false);
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={3}>
+                  <input
+                    accept="image/*"
+                    className={classes.input}
+                    id="contained-button-file"
+                    type="file"
+                    style={{ display: "none" }}
+                    onChange={(event) => {
+                      setImage(event.target.files[0]);
+                      setImageName(event.target.files[0].name);
+                    }}
+                  />
+                  <label htmlFor="contained-button-file">
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      component="span"
+                      fullWidth
+                    >
+                      Browse
+                    </Button>
+                  </label>
+                </Grid>
+              </Grid>
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setBoardDialog(false)} variant="contained">
@@ -2237,22 +2411,21 @@ export default function Dashboard() {
                   console.log(control.getValues());
                   setUpdateProgress(true);
                   var choice = "new";
+                  var formData = new FormData();
+                  formData.append("file", image);
+                  formData.append("subject", control.getValues().boardSubject);
+                  formData.append("department", boardDepartment);
+                  formData.append("decision", control.getValues().boardDecision);
+                  formData.append("status", boardStatus);
+                  formData.append("meeting", selectedMeeting);
+                  formData.append("date", boardDate);
                   if (addOrUpdate === "Update") {
                     choice = "update";
+                    formData.append("_id", boardDecisionId);
                   }
                   axios.create({ baseURL: window.location.origin });
                   axios
-                    .post("/api/upload_board_decisions/" + choice, {
-                      subject: control.getValues().boardSubject,
-                      department: boardDepartment,
-                      decision: control.getValues().boardDecision,
-                      status: boardStatus,
-                      meeting: selectedMeeting,
-                      date: boardDate,
-                      ...(addOrUpdate === "Update"
-                        ? { _id: boardDecisionId }
-                        : {}),
-                    })
+                    .post("/api/upload_board_decisions/" + choice, formData)
                     .then(function (response) {
                       console.log(response);
                       setUpdateProgress(false);

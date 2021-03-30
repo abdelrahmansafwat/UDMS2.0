@@ -11,6 +11,7 @@ let boardDecisionSchema = new Schema({
     status: { type: String },
     meeting: { type: Number, required: true },
     date: { type: Date, default: Date.now },
+    image: { type: String, required: true },
 });
 
 let boardDecisionModel = mongoose.model("boardDecisionModel", boardDecisionSchema);

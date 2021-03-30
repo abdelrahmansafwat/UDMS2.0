@@ -61,11 +61,13 @@ router.post("/new", uploadDisk.single("file"), async (req, res) => {
 //Update decision route
 router.post("/update", uploadDisk.single("file"), async (req, res) => {
   console.log(req);
+  /*
   fs.unlink(path.join(__dirname, "files", req.body.oldimage), (err) => {
     res.status(500).json({
       message: err.message,
     });
   });
+  */
 
   let newDecision = await decisionModel.findOneAndUpdate(
     { _id: req.body._id },
@@ -94,6 +96,7 @@ router.post("/update", uploadDisk.single("file"), async (req, res) => {
 
 //Delete decision route
 router.post("/delete", async (req, res) => {
+  /*
   fs.unlink(path.join(__dirname, "..", "files", req.body.oldimage), (err) => {
     if (err) {
       res.status(500).json({
@@ -101,6 +104,7 @@ router.post("/delete", async (req, res) => {
       });
     }
   });
+  */
 
   decisionModel.deleteOne({ _id: req.body._id }, function (err) {
     if (err) {

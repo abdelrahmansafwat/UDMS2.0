@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     textAlign: "center",
-    fontFamily: "Tajawal",
+    fontFamily: "Times New Roman",
   },
   author: {
     fontSize: 12,
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     margin: "5 12 5 12",
     fontSize: 12,
     textAlign: "right",
-    fontFamily: "Tajawal",
+    fontFamily: "Times New Roman",
   },
   image: {
     marginVertical: 15,
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   department: {
     backgroundColor: "gray",
     paddingTop: 3,
-    fontFamily: "Tajawal",
+    fontFamily: "Times New Roman",
     margin: 12,
     fontSize: 14,
     textDecoration: "underline",
